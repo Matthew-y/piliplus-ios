@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/assets.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dynamic_sliver_app_bar/dynamic_sliver_app_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -320,7 +321,7 @@ class _DynTopicPageState extends State<DynTopicPage>
             // https://www.bilibili.com/v/topic/detail?topic_id=${_controller.topicId}
             icon: const Icon(MdiIcons.share),
           ),
-          PopupMenuButton(
+          PLPopupMenuButton(
             itemBuilder: (context) {
               return [
                 PopupMenuItem(

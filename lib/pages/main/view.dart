@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_bottom_nav.dart';
 import 'package:PiliPlus/common/widgets/floating_navigation_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -171,13 +172,13 @@ class _MainAppState extends PopScopeState<MainApp>
         );
       } else if (_mainController.enableMYBar) {
         bottomNav = Obx(
-          () => NavigationBar(
+          () => PLBottomNav(
             maintainBottomViewPadding: true,
-            onDestinationSelected: _mainController.setIndex,
             selectedIndex: _mainController.selectedIndex.value,
+            onDestinationSelected: _mainController.setIndex,
             destinations: _mainController.navigationBars
                 .map(
-                  (e) => NavigationDestination(
+                  (e) => PLNavDestination(
                     label: e.label,
                     icon: _buildIcon(type: e),
                     selectedIcon: _buildIcon(type: e, selected: true),

@@ -23,6 +23,7 @@ import 'package:PiliPlus/utils/extension/core_palettes_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/font_utils.dart';
 import 'package:PiliPlus/utils/ios/pip_helper.dart';
+import 'package:PiliPlus/utils/ios_style.dart';
 import 'package:PiliPlus/utils/json_file_handler.dart';
 import 'package:PiliPlus/utils/max_screen_size.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
@@ -286,45 +287,72 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (light, dark) = getAllTheme();
-    return GetMaterialApp(
-      title: Constants.appName,
-      theme: light,
-      darkTheme: dark,
-      themeMode: ThemeUtils.themeMode = Pref.themeMode,
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      locale: const Locale("zh", "CN"),
-      fallbackLocale: const Locale("zh", "CN"),
-      supportedLocales: const [Locale("zh", "CN"), Locale("en", "US")],
-      initialRoute: '/',
-      getPages: Routes.getPages,
-      defaultTransition: Pref.pageTransition,
-      builder: FlutterSmartDialog.init(
-        toastBuilder: CustomToast.new,
-        loadingBuilder: LoadingWidget.new,
-        notifyStyle: const FlutterSmartNotifyStyle(
-          warningBuilder: NotifyWarning.new,
-        ),
-        builder: _builder,
-      ),
-      navigatorObservers: [
-        routeObserver,
-        FlutterSmartDialog.observer,
-      ],
-      scrollBehavior: PlatformUtils.isDesktop
-          ? const CustomScrollBehavior()
-          : null,
+    // 界面风格切换后重建 GetMaterialApp：ThemeData.platform、
+    // Style.topBarHeight、TabBarView 物理等都在 build 时按新值读取，
+    // 不再出现「提示重启、实际只有一半生效」的状态。
+    return ValueListenableBuilder<int>(
+      valueListenable: IosStyle.revision,
+      builder: (context, _, _) {
+        final (light, dark) = getAllTheme();
+        return GetMaterialApp(
+          title: Constants.appName,
+          theme: light,
+          darkTheme: dark,
+          themeMode: ThemeUtils.themeMode = Pref.themeMode,
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          locale: const Locale("zh", "CN"),
+          fallbackLocale: const Locale("zh", "CN"),
+          supportedLocales: const [Locale("zh", "CN"), Locale("en", "US")],
+          initialRoute: '/',
+          getPages: Routes.getPages,
+          defaultTransition: Pref.pageTransition,
+          builder: FlutterSmartDialog.init(
+            toastBuilder: CustomToast.new,
+            loadingBuilder: LoadingWidget.new,
+            notifyStyle: const FlutterSmartNotifyStyle(
+              warningBuilder: NotifyWarning.new,
+            ),
+            builder: _builder,
+          ),
+          navigatorObservers: [
+            routeObserver,
+            FlutterSmartDialog.observer,
+          ],
+          scrollBehavior: PlatformUtils.isDesktop
+              ? const CustomScrollBehavior()
+              : null,
+        );
+      },
     );
   }
 
   static Widget _builder(BuildContext context, Widget? child) {
     final uiScale = Pref.uiScale;
     final mediaQuery = MediaQuery.of(context);
-    final textScaler = TextScaler.linear(Pref.defaultTextScale);
+    // App 内的字号设置是倍率（默认 1.0）。
+    // 真实 iOS 上还要乘上系统的 Dynamic Type，否则用户在「设置 → 显示与亮度 →
+    // 文字大小」里调大字号后完全无反应——这是 iOS 观感的一部分。
+    // 这里必须按**真实平台**判断，而不是「iOS 风格」开关：在 Android 上强制
+    // 开启 iOS 风格时，如果再乘一次系统字号，会和 App 内倍率叠加成双重放大。
+    final textScaler = TextScaler.linear(
+      Pref.defaultTextScale *
+          (defaultTargetPlatform == TargetPlatform.iOS
+              ? mediaQuery.textScaler.scale(1)
+              : 1),
+    );
+    // Cupertino 组件的动态色（CupertinoSlidingSegmentedControl、
+    // CupertinoTabBar、CupertinoListTile 等）是按 MediaQuery.platformBrightness
+    // 解析的，不认 Theme 的 brightness。系统浅色 + App 内选深色时，
+    // 这些组件会一直是浅色（深色模式下的色块异常）。
+    // iOS 风格下把 platformBrightness 对齐到当前主题即可整体修正。
+    final platformBrightness = IosStyle.isIOSStyleEnabled
+        ? Theme.of(context).brightness
+        : mediaQuery.platformBrightness;
     if (uiScale != 1.0) {
       child = MediaQuery(
         data: mediaQuery.copyWith(
           textScaler: textScaler,
+          platformBrightness: platformBrightness,
           size: mediaQuery.size / uiScale,
           padding: tmpPadding ?? mediaQuery.padding / uiScale,
           viewInsets: mediaQuery.viewInsets / uiScale,
@@ -337,6 +365,7 @@ class MyApp extends StatelessWidget {
       child = MediaQuery(
         data: mediaQuery.copyWith(
           textScaler: textScaler,
+          platformBrightness: platformBrightness,
           padding: tmpPadding,
           viewPadding: tmpPadding,
         ),

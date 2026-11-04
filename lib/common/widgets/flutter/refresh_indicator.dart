@@ -6,12 +6,14 @@
 
 import 'dart:async' show Completer;
 
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/common/widgets/refresh_layout.dart';
 import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart'
     show BouncingScrollPhysicsExt;
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoActivityIndicator;
 import 'package:extended_nested_scroll_view/refresh.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:material_ui/material_ui.dart' hide RefreshIndicator;
@@ -524,13 +526,16 @@ class RefreshIndicatorState extends State<RefreshIndicator>
           ? null
           : AnimatedBuilder(
               animation: _positionController,
-              builder: (context, child) => RefreshProgressIndicator(
-                value: showIndeterminateIndicator ? null : _value.value,
-                valueColor: _valueColor,
-                backgroundColor: widget.backgroundColor,
-                strokeWidth: widget.strokeWidth,
-                elevation: widget.elevation,
-              ),
+              builder: (context, child) => Adaptive.isIOS(context)
+                  // iOS：原生下拉刷新是灰色菊花，没有 Material 的圆盘。
+                  ? const CupertinoActivityIndicator(radius: 12)
+                  : RefreshProgressIndicator(
+                      value: showIndeterminateIndicator ? null : _value.value,
+                      valueColor: _valueColor,
+                      backgroundColor: widget.backgroundColor,
+                      strokeWidth: widget.strokeWidth,
+                      elevation: widget.elevation,
+                    ),
             ),
     );
 

@@ -1,4 +1,4 @@
-import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
 
 class NormalItem extends StatefulWidget {
@@ -42,7 +42,7 @@ class _NormalItemState extends State<NormalItem> {
         ),
       );
     }
-    return ListTile(
+    return PLListTile(
       contentPadding: widget.contentPadding,
       onTap: widget.onTap == null
           ? null

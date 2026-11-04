@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/cropped_image.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/disabled_icon.dart';
@@ -492,7 +493,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       BottomControlType.superResolution => Obx(
         () {
           final type = plPlayerController.superResolutionType.value;
-          return PopupMenuButton<SuperResolutionType>(
+          return PLPopupMenuButton<SuperResolutionType>(
             tooltip: '超分辨率',
             requestFocus: false,
             initialValue: type,
@@ -591,7 +592,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       BottomControlType.fit => Obx(
         () {
           final fit = plPlayerController.videoFit.value;
-          return PopupMenuButton<VideoFitType>(
+          return PLPopupMenuButton<VideoFitType>(
             tooltip: '画面比例',
             requestFocus: false,
             initialValue: fit,
@@ -630,7 +631,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         () {
           final list = videoDetailController.languages.value;
           if (list != null && list.isNotEmpty) {
-            return PopupMenuButton<String>(
+            return PLPopupMenuButton<String>(
               tooltip: '翻译',
               requestFocus: false,
               initialValue: videoDetailController.currLang.value,
@@ -676,7 +677,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         () {
           if (videoDetailController.subtitles.isNotEmpty) {
             final val = videoDetailController.vttSubtitlesIndex.value;
-            return PopupMenuButton<int>(
+            return PLPopupMenuButton<int>(
               tooltip: '字幕',
               requestFocus: false,
               initialValue: val,
@@ -733,7 +734,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
       /// 播放速度
       BottomControlType.speed => Obx(
-        () => PopupMenuButton<double>(
+        () => PLPopupMenuButton<double>(
           tooltip: '倍速',
           requestFocus: false,
           initialValue: plPlayerController.playbackSpeed,
@@ -779,7 +780,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           }
           final videoFormat = videoInfo.supportFormats!;
           final availableQa = videoInfo.dash!.video!.availableVideoQualities;
-          return PopupMenuButton<int>(
+          return PLPopupMenuButton<int>(
             tooltip: '画质',
             requestFocus: false,
             initialValue: currentVideoQa.code,

@@ -4,6 +4,7 @@ import 'package:PiliPlus/http/msg.dart';
 import 'package:PiliPlus/models_new/msg/msg_like/data.dart';
 import 'package:PiliPlus/models_new/msg/msg_like/item.dart';
 import 'package:PiliPlus/pages/common/common_data_controller.dart';
+import 'package:PiliPlus/pages/msg_feed_top/msg_feed_strings.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
@@ -76,11 +77,13 @@ class LikeMeController
           pair.second.removeAt(index);
         }
         loadingState.refresh();
-        SmartDialog.showToast('删除成功');
+        SmartDialog.showToast(MsgStrings.deleteSuccess);
       } else {
         res.toast();
       }
-    } catch (_) {}
+    } catch (e) {
+      SmartDialog.showToast(e.toString());
+    }
   }
 
   Future<void> onSetNotice(MsgLikeItem item, bool isNotice) async {
@@ -92,7 +95,7 @@ class LikeMeController
     if (res.isSuccess) {
       item.noticeState = noticeState;
       loadingState.refresh();
-      SmartDialog.showToast('设置成功');
+      SmartDialog.showToast(MsgStrings.setNoticeSuccess);
     } else {
       res.toast();
     }

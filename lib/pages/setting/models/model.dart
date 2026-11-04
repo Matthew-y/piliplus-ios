@@ -70,6 +70,7 @@ class SplitModel extends SettingsModel {
 class PopupModel<T extends EnumWithLabel> extends SettingsModel {
   const PopupModel({
     required this.title,
+    super.subtitle,
     super.leading,
     super.contentPadding,
     super.titleStyle,
@@ -79,7 +80,7 @@ class PopupModel<T extends EnumWithLabel> extends SettingsModel {
   });
 
   @override
-  String? get effectiveSubtitle => null;
+  String? get effectiveSubtitle => subtitle;
 
   @override
   String get effectiveTitle => title;
@@ -96,6 +97,7 @@ class PopupModel<T extends EnumWithLabel> extends SettingsModel {
     safeArea: false,
     leading: leading,
     title: Text(title),
+    subtitle: subtitle,
     value: () {
       final v = value();
       return (v, v.label);

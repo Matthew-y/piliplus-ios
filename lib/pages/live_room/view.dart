@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/extra_hittest_stack.dart';
@@ -655,7 +656,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
         //   onPressed: _liveRoomController.queryLiveUrl,
         //   icon: const Icon(Icons.refresh, size: 20),
         // ),
-        PopupMenuButton(
+        PLPopupMenuButton(
           icon: const Icon(Icons.more_vert, size: 20),
           itemBuilder: (BuildContext context) {
             final liveUrl =

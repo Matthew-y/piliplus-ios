@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/http/video.dart';
@@ -39,7 +40,7 @@ class VideoPopupMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton(
+    return PLPopupMenuButton(
       padding: EdgeInsets.zero,
       icon: Icon(
         Icons.more_vert_outlined,

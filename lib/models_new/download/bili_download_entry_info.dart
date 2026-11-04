@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/models/common/video/base_quality.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
@@ -94,7 +95,7 @@ class BiliDownloadEntryInfo with MultiSelectData {
   Widget moreBtn(ColorScheme colorScheme) => SizedBox(
     width: 29,
     height: 29,
-    child: PopupMenuButton(
+    child: PLPopupMenuButton(
       padding: EdgeInsets.zero,
       position: PopupMenuPosition.under,
       icon: Icon(

@@ -1,3 +1,6 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_section.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_search_field.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -13,6 +16,9 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/utils.dart';
+
+import 'dart:async';
+
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -42,6 +48,9 @@ class _SettingPageState extends State<SettingPage> {
   final RxBool _noAccount = Accounts.account.isEmpty.obs;
   late bool _isPortrait;
   late ThemeData theme;
+  // 监听账号变化以重建列表（iOS 分支不能用 Obx 包 CupertinoListSection，
+  // 见 _iosGroupedList）。Material 分支仍用自身的 Obx。
+  StreamSubscription? _noAccountSub;
 
   static const List<_SettingsModel> _items = [
     _SettingsModel(
@@ -100,6 +109,16 @@ class _SettingPageState extends State<SettingPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // 账号列表变化时重建列表，让「退出登录」在登出后自动消失
+    // （iOS 分支 _iosGroupedList 直接读 _noAccount.value，靠这里触发 rebuild）。
+    _noAccountSub = _noAccount.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
@@ -145,6 +164,7 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   void dispose() {
+    _noAccountSub?.cancel();
     _noAccount.close();
     super.dispose();
   }
@@ -178,42 +198,90 @@ class _SettingPageState extends State<SettingPage> {
     TextStyle subTitleStyle = theme.textTheme.labelMedium!.copyWith(
       color: theme.colorScheme.outline,
     );
-    return ListView(
-      padding: EdgeInsets.only(bottom: padding.bottom + 100),
-      children: [
-        _buildSearchItem(theme),
-        ..._items
-            .take(_items.length - 1)
-            .map(
-              (item) => ListTile(
-                tileColor: _getTileColor(theme, item.type),
-                onTap: () => _toPage(item.type),
-                leading: item.icon,
-                title: Text(item.type.title, style: titleStyle),
-                subtitle: item.subtitle == null
-                    ? null
-                    : Text(item.subtitle!, style: subTitleStyle),
-              ),
+
+    final entries = <Widget>[
+      _buildSearchItem(theme),
+      ..._items
+          .take(_items.length - 1)
+          .map(
+            (item) => ListTile(
+              tileColor: _getTileColor(theme, item.type),
+              onTap: () => _toPage(item.type),
+              leading: item.icon,
+              title: Text(item.type.title, style: titleStyle),
+              subtitle: item.subtitle == null
+                  ? null
+                  : Text(item.subtitle!, style: subTitleStyle),
             ),
-        ListTile(
-          onTap: () => LoginPageController.switchAccountDialog(context),
-          leading: const Icon(Icons.switch_account_outlined),
-          title: Text('切换账号', style: titleStyle),
+          ),
+      ListTile(
+        onTap: () => LoginPageController.switchAccountDialog(context),
+        leading: const Icon(Icons.switch_account_outlined),
+        title: Text('切换账号', style: titleStyle),
+      ),
+      Obx(
+        () => _noAccount.value
+            ? const SizedBox.shrink()
+            : ListTile(
+                leading: const Icon(Icons.logout_outlined),
+                onTap: () => _logoutDialog(context),
+                title: Text('退出登录', style: titleStyle),
+              ),
+      ),
+      ListTile(
+        tileColor: _getTileColor(theme, _items.last.type),
+        onTap: () => _toPage(_items.last.type),
+        leading: _items.last.icon,
+        title: Text(_items.last.type.title, style: titleStyle),
+      ),
+    ];
+
+    return ListView(
+      padding: EdgeInsets.only(
+        top: Adaptive.isIOS(context) ? 8 : 0,
+        bottom: padding.bottom + 100,
+      ),
+      children: Adaptive.isIOS(context) ? [_iosGroupedList(entries)] : entries,
+    );
+  }
+
+  /// iOS 风格：把设置项整理成圆角分组卡片（inset grouped）。
+  Widget _iosGroupedList(List<Widget> entries) {
+    // 普通条目都是 ListTile，直接转成 PLListSectionTile。
+    // 注意「退出登录」被 Obx(() => ... ListTile) 包了一层，本身不是 ListTile，
+    // 不能靠类型判断，要单独按 _noAccount 条件追加，否则登录态下会整条丢失。
+    //
+    // 这里不能用 Obx 包住 PLListSection：CupertinoListSection 在语义收集阶段
+    // 被 Obx 重建会触发 Flutter 的 `node.parent?._dirty` 断言。
+    // 改用 _noAccount 的 listen + setState（见 initState），由 build 直接读值。
+    final plainTiles = [
+      for (final e in entries.whereType<ListTile>())
+        PLListSectionTile(
+          title: e.title,
+          subtitle: e.subtitle,
+          leading: e.leading,
+          onTap: e.onTap,
         ),
-        Obx(
-          () => _noAccount.value
-              ? const SizedBox.shrink()
-              : ListTile(
-                  leading: const Icon(Icons.logout_outlined),
-                  onTap: () => _logoutDialog(context),
-                  title: Text('退出登录', style: titleStyle),
-                ),
+    ];
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        // 搜索框独立在分组卡片之外，顶部留出与导航栏的间距。
+        PLSearchField(
+          placeholder: '搜索',
+          onTap: () => Get.toNamed('/settingsSearch'),
+          bottomPadding: 16,
         ),
-        ListTile(
-          tileColor: _getTileColor(theme, _items.last.type),
-          onTap: () => _toPage(_items.last.type),
-          leading: _items.last.icon,
-          title: Text(_items.last.type.title, style: titleStyle),
+        PLListSection(
+          children: [
+            for (final t in plainTiles) t,
+            if (!_noAccount.value)
+              PLListSectionTile(
+                title: const Text('退出登录'),
+                leading: const Icon(Icons.logout_outlined),
+                onTap: () => _logoutDialog(context),
+              ),
+          ],
         ),
       ],
     );

@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -122,7 +123,7 @@ class _DownloadPanelState extends State<DownloadPanel> {
               children: [
                 Text('画质', style: textStyle),
                 Builder(
-                  builder: (context) => PopupMenuButton<VideoQuality>(
+                  builder: (context) => PLPopupMenuButton<VideoQuality>(
                     initialValue: _quality,
                     onSelected: (value) {
                       _quality = value;
@@ -141,7 +142,7 @@ class _DownloadPanelState extends State<DownloadPanel> {
                 ),
                 Text('音质', style: textStyle),
                 Builder(
-                  builder: (context) => PopupMenuButton<AudioQuality>(
+                  builder: (context) => PLPopupMenuButton<AudioQuality>(
                     initialValue: _audioQuality,
                     onSelected: (value) {
                       _audioQuality = value;

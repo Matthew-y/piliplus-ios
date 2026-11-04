@@ -1,6 +1,7 @@
 import 'dart:math' show max;
 
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/button/toolbar_icon_button.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
@@ -378,7 +379,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
     final color = _isPrivate.value
         ? theme.colorScheme.error
         : theme.colorScheme.secondary;
-    return PopupMenuButton<bool>(
+    return PLPopupMenuButton<bool>(
       requestFocus: false,
       initialValue: _isPrivate.value,
       onSelected: _isPrivate.call,
@@ -434,7 +435,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
     final color = _replyOption.value == ReplyOptionType.close
         ? theme.colorScheme.error
         : theme.colorScheme.secondary;
-    return PopupMenuButton<ReplyOptionType>(
+    return PLPopupMenuButton<ReplyOptionType>(
       requestFocus: false,
       initialValue: _replyOption.value,
       onSelected: (item) => _replyOption.value = item,

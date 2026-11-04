@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -164,7 +165,7 @@ class _HistoryPageState extends State<HistoryPage>
         onPressed: () => Get.toNamed('/historySearch'),
         icon: const Icon(Icons.search_outlined),
       ),
-      PopupMenuButton(
+      PLPopupMenuButton(
         itemBuilder: (_) => [
           PopupMenuItem(
             onTap: () => _historyController.baseCtr.onPauseHistory(context),

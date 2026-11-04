@@ -25,6 +25,7 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -47,40 +48,60 @@ class MineController extends GetxController with AccountMixin {
   static RxBool anonymity =
       (Accounts.account.isNotEmpty && !Accounts.heartbeat.isLogin).obs;
 
-  late final list = <({IconData icon, String title, VoidCallback onTap})>[
-    (
-      icon: CustomIcons.folderDownloadOutline,
-      title: '离线缓存',
-      onTap: () => Get.toNamed('/download'),
-    ),
-    (
-      icon: CustomIcons.history,
-      title: '观看记录',
-      onTap: () {
-        if (isLogin) {
-          Get.toNamed('/history');
-        }
-      },
-    ),
-    (
-      icon: CustomIcons.subscriptions_outlined,
-      title: '我的订阅',
-      onTap: () {
-        if (isLogin) {
-          Get.toNamed('/subscription');
-        }
-      },
-    ),
-    (
-      icon: CustomIcons.watch_later_outlined,
-      title: '稍后再看',
-      onTap: () {
-        if (isLogin) {
-          Get.toNamed('/later');
-        }
-      },
-    ),
-  ];
+  /// 快捷入口。
+  ///
+  /// [cupertinoIcon] 是 iOS 风格下用的 SF Symbols 风格线性图标（CupertinoIcons），
+  /// [icon] 仍是 Material 风格原有的图标，两种风格各用各的。
+  late final list =
+      <
+        ({
+          IconData icon,
+          IconData cupertinoIcon,
+          String title,
+          VoidCallback onTap,
+        })
+      >[
+        (
+          icon: CustomIcons.folderDownloadOutline,
+          // arrow.down.to.line —— 下载
+          cupertinoIcon: CupertinoIcons.arrow_down_to_line,
+          title: '离线缓存',
+          onTap: () => Get.toNamed('/download'),
+        ),
+        (
+          icon: CustomIcons.history,
+          // clock.arrow.circlepath —— 观看记录
+          cupertinoIcon: CupertinoIcons.arrow_counterclockwise,
+          title: '观看记录',
+          onTap: () {
+            if (isLogin) {
+              Get.toNamed('/history');
+            }
+          },
+        ),
+        (
+          icon: CustomIcons.subscriptions_outlined,
+          // play.rectangle —— 订阅
+          cupertinoIcon: CupertinoIcons.play_rectangle,
+          title: '我的订阅',
+          onTap: () {
+            if (isLogin) {
+              Get.toNamed('/subscription');
+            }
+          },
+        ),
+        (
+          icon: CustomIcons.watch_later_outlined,
+          // clock —— 稍后再看
+          cupertinoIcon: CupertinoIcons.clock,
+          title: '稍后再看',
+          onTap: () {
+            if (isLogin) {
+              Get.toNamed('/later');
+            }
+          },
+        ),
+      ];
 
   late final Set<MineTabType> mineTabs;
   FavCtr? favCtr;

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/models/common/video/base_quality.dart';
 import 'package:PiliPlus/pages/live_room/controller.dart';
@@ -128,7 +129,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
               onTap: () => showSetDanmaku(isLive: true),
             ),
             Obx(
-              () => PopupMenuButton<VideoFitType>(
+              () => PLPopupMenuButton<VideoFitType>(
                 tooltip: '画面比例',
                 initialValue: plPlayerController.videoFit.value,
                 color: Colors.black.withValues(alpha: 0.8),
@@ -167,7 +168,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
                 if (quality == null) {
                   return const SizedBox.shrink();
                 }
-                return PopupMenuButton<LiveQuality>(
+                return PLPopupMenuButton<LiveQuality>(
                   tooltip: '画质',
                   padding: .zero,
                   initialValue: quality,

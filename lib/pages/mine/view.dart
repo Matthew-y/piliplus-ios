@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -77,15 +79,29 @@ class _MediaPageState extends CommonPageState<MinePage>
   Widget build(BuildContext context) {
     super.build(context);
     final secondary = theme.colorScheme.secondary;
+    final isIOS = Adaptive.isIOS(context);
     return Column(
       children: [
-        Padding(
-          padding: const .symmetric(vertical: 10),
-          child: _buildHeaderActions,
-        ),
+        // iOS：顶部图标行放进一条白色（深色下 canvas）工具条里，
+        // 不再直接浮在内容上。
+        if (isIOS)
+          ColoredBox(
+            color: IosColors.headerBackground(context),
+            child: Padding(
+              padding: const .symmetric(vertical: 10),
+              child: _buildHeaderActions,
+            ),
+          )
+        else
+          Padding(
+            padding: const .symmetric(vertical: 10),
+            child: _buildHeaderActions,
+          ),
         Expanded(
           child: Material(
-            type: .transparency,
+            // iOS：页面底色用系统分组灰，卡片才能「白底 + 灰底」分层。
+            color: isIOS ? IosColors.groupedBackground(theme.brightness) : null,
+            type: isIOS ? .canvas : .transparency,
             child: refreshIndicator(
               onRefresh: controller.onRefresh,
               child: onBuild(
@@ -93,7 +109,10 @@ class _MediaPageState extends CommonPageState<MinePage>
                   padding: const .only(bottom: 150),
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    _buildUserInfo(theme, secondary),
+                    if (isIOS)
+                      _buildUserInfoCard(theme, secondary)
+                    else
+                      _buildUserInfo(theme, secondary),
                     _buildActions(secondary),
                     for (final tab in controller.mineTabs)
                       switch (tab) {
@@ -112,8 +131,22 @@ class _MediaPageState extends CommonPageState<MinePage>
     );
   }
 
+  /// iOS：资料卡（头像 / 昵称 / 硬币经验 / 数据统计）作为一个白色分组卡片。
+  Widget _buildUserInfoCard(ThemeData theme, Color secondary) {
+    return Container(
+      margin: const .fromLTRB(16, 8, 16, 4),
+      padding: const .symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: IosColors.secondaryGroupedBackground(theme.brightness),
+        borderRadius: const .all(.circular(12)),
+      ),
+      child: _buildUserInfo(theme, secondary),
+    );
+  }
+
   Widget _buildActions(Color primary) {
-    return Row(
+    final isIOS = Adaptive.isIOS(context);
+    final row = Row(
       mainAxisAlignment: .spaceEvenly,
       children: controller.list
           .map(
@@ -121,6 +154,11 @@ class _MediaPageState extends CommonPageState<MinePage>
               child: InkWell(
                 onTap: e.onTap,
                 borderRadius: Style.mdRadius,
+                // iOS：点击用系统灰高亮，而不是 Material 的水波纹。
+                highlightColor: isIOS
+                    ? IosColors.gray4(theme.brightness)
+                    : null,
+                splashFactory: isIOS ? NoSplash.splashFactory : null,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 80),
                   child: AspectRatio(
@@ -130,7 +168,12 @@ class _MediaPageState extends CommonPageState<MinePage>
                       mainAxisSize: .min,
                       mainAxisAlignment: .center,
                       children: [
-                        Icon(e.icon, color: primary),
+                        Icon(
+                          // iOS 用 SF Symbols 风格的 CupertinoIcons 线性图标。
+                          isIOS ? e.cupertinoIcon : e.icon,
+                          color: primary,
+                          size: 24,
+                        ),
                         Text(
                           e.title,
                           style: const TextStyle(fontSize: 13),
@@ -143,6 +186,13 @@ class _MediaPageState extends CommonPageState<MinePage>
             ),
           )
           .toList(),
+    );
+    if (!isIOS) return row;
+    // 页面底色是 ColoredBox，水波纹需要一个 Material 承载才可见。
+    return Material(
+      type: .transparency,
+      color: Colors.transparent,
+      child: row,
     );
   }
 
@@ -229,6 +279,7 @@ class _MediaPageState extends CommonPageState<MinePage>
   }
 
   Widget _buildUserInfo(ThemeData theme, Color secondary) {
+    final isIOS = Adaptive.isIOS(context);
     final style = TextStyle(
       fontSize: theme.textTheme.titleMedium!.fontSize,
       fontWeight: FontWeight.bold,
@@ -360,14 +411,20 @@ class _MediaPageState extends CommonPageState<MinePage>
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 225),
                         child: LinearProgressIndicator(
-                          minHeight: 2.25,
+                          minHeight: isIOS ? 4 : 2.25,
                           value: hasLevel
                               ? levelInfo.currentExp! / levelInfo.nextExp!
                               : 0,
-                          backgroundColor: theme.colorScheme.outline.withValues(
-                            alpha: 0.4,
+                          // iOS：轨道浅灰、填充品牌粉、圆角。
+                          backgroundColor: isIOS
+                              ? IosColors.gray5(theme.brightness)
+                              : theme.colorScheme.outline.withValues(
+                                  alpha: 0.4,
+                                ),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isIOS ? IosColors.brandPink : secondary,
                           ),
-                          valueColor: AlwaysStoppedAnimation<Color>(secondary),
+                          borderRadius: isIOS ? const .all(.circular(2)) : null,
                           stopIndicatorColor: Colors.transparent,
                         ),
                       ),
@@ -378,6 +435,15 @@ class _MediaPageState extends CommonPageState<MinePage>
               ],
             ),
           ),
+          const SizedBox(height: 10),
+          if (isIOS)
+            Divider(
+              height: 1,
+              thickness: 1,
+              indent: 20,
+              endIndent: 20,
+              color: IosColors.separator(theme.brightness),
+            ),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: .spaceEvenly,
@@ -417,30 +483,32 @@ class _MediaPageState extends CommonPageState<MinePage>
     required TextStyle? labelStyle,
     required VoidCallback onTap,
   }) {
+    final content = Column(
+      spacing: 4,
+      mainAxisSize: .min,
+      mainAxisAlignment: .center,
+      children: [
+        Text(
+          count?.toString() ?? '-',
+          style: countStyle,
+        ),
+        Text(
+          name,
+          style: labelStyle,
+        ),
+      ],
+    );
     return Flexible(
       child: InkWell(
         onTap: onTap,
         borderRadius: Style.mdRadius,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 80),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: Column(
-              spacing: 4,
-              mainAxisSize: .min,
-              mainAxisAlignment: .center,
-              children: [
-                Text(
-                  count?.toString() ?? '-',
-                  style: countStyle,
-                ),
-                Text(
-                  name,
-                  style: labelStyle,
-                ),
-              ],
-            ),
-          ),
+          // iOS 资料卡：统计区高度与上方头像行（55）一致，
+          // 使分割线上下高度相同。
+          child: Adaptive.isIOS(context)
+              ? SizedBox(width: 80, height: 55, child: content)
+              : AspectRatio(aspectRatio: 1, child: content),
         ),
       ),
     );
@@ -546,45 +614,68 @@ class _MediaPageState extends CommonPageState<MinePage>
         );
     }
     final secondary = theme.colorScheme.secondary;
+    final isIOS = Adaptive.isIOS(context);
+    final refreshBtn = IconButton(
+      tooltip: '刷新',
+      onPressed: tabCtr.onRefresh,
+      iconSize: 20,
+      color: isIOS ? IosColors.secondaryLabel(theme.brightness) : null,
+      constraints: isIOS
+          ? const BoxConstraints.tightFor(width: 32, height: 32)
+          : null,
+      padding: isIOS ? EdgeInsets.zero : null,
+      icon: const Icon(Icons.refresh),
+    );
     return Column(
       children: [
-        Divider(
-          height: 20,
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
+        if (!isIOS)
+          Divider(
+            height: 20,
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          )
+        else
+          const SizedBox(height: 12),
         ListTile(
           dense: true,
           onTap: onPushDetail,
           title: Padding(
             padding: const EdgeInsets.only(left: 10),
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: '${tab.label}  ',
-                    style: const TextStyle(fontSize: 16, fontWeight: .bold),
-                  ),
-                  if (tabCtr.count != null)
+            child: Row(
+              mainAxisSize: .min,
+              children: [
+                Flexible(
+                  child: Text.rich(
                     TextSpan(
-                      text: '${tabCtr.count}  ',
-                      style: TextStyle(color: secondary),
-                    ),
-                  WidgetSpan(
-                    child: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 18,
-                      color: secondary,
+                      children: [
+                        TextSpan(
+                          text: '${tab.label}  ',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: .bold,
+                          ),
+                        ),
+                        if (tabCtr.count != null)
+                          TextSpan(
+                            text: '${tabCtr.count}  ',
+                            style: TextStyle(color: secondary),
+                          ),
+                        WidgetSpan(
+                          child: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 18,
+                            color: secondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                // iOS：刷新按钮紧跟在标题右侧，不再甩到整行最右。
+                if (isIOS) refreshBtn,
+              ],
             ),
           ),
-          trailing: IconButton(
-            tooltip: '刷新',
-            onPressed: tabCtr.onRefresh,
-            icon: const Icon(Icons.refresh, size: 20),
-          ),
+          trailing: isIOS ? null : refreshBtn,
         ),
         child,
       ],

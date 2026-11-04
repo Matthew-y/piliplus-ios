@@ -3,7 +3,10 @@ import 'dart:math';
 
 import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/init.dart';
+import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/home_tab_type.dart';
+import 'package:PiliPlus/models_new/search/search_trending/data.dart';
 import 'package:PiliPlus/pages/common/common_controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -25,6 +28,19 @@ class HomeController extends GetxController
 
   bool enableSearchWord = Pref.enableSearchWord;
   late final RxString defaultSearch = ''.obs;
+
+  /// 热搜榜里的一个词，作为搜索框占位词的兜底（搜索推荐热词）。
+  late final RxString hotWord = ''.obs;
+
+  /// 搜索框占位词：优先服务端默认搜索词，其次热搜词，最后「搜索」。
+  String get searchHint => switch (defaultSearch.value) {
+    final word when word.isNotEmpty => word,
+    _ => switch (hotWord.value) {
+      final word when word.isNotEmpty => word,
+      _ => '搜索',
+    },
+  };
+
   late int lateCheckSearchAt = 0;
 
   ScrollOrRefreshMixin get controller => tabs[tabController.index].ctr();
@@ -52,6 +68,9 @@ class HomeController extends GetxController
     if (enableSearchWord) {
       lateCheckSearchAt = DateTime.now().millisecondsSinceEpoch;
       querySearchDefault();
+    } else {
+      // 关闭「搜索推荐词」时，占位词退回到热搜榜（只取一个词）。
+      queryHotWord();
     }
 
     setTabConfig();
@@ -94,6 +113,25 @@ class HomeController extends GetxController
       if (res.data['code'] == 0) {
         defaultSearch.value = res.data['data']?['name'] ?? '';
         // defaultSearch.value = res.data['data']?['show_name'] ?? '';
+      }
+    } catch (_) {}
+    if (defaultSearch.value.isEmpty) {
+      queryHotWord();
+    }
+  }
+
+  /// 取热搜榜前几名里的一个词做占位词，避免搜索框空着。
+  Future<void> queryHotWord() async {
+    try {
+      final res = await SearchHttp.searchTrending(limit: 10);
+      if (res is Success<SearchTrendingData>) {
+        final list = res.response.list;
+        if (list != null && list.isNotEmpty) {
+          final word = list[Random().nextInt(min(5, list.length))].showName;
+          if (word.isNotEmpty) {
+            hotWord.value = word;
+          }
+        }
       }
     } catch (_) {}
   }

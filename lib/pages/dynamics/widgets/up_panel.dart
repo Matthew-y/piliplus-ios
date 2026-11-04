@@ -1,4 +1,6 @@
 import 'package:PiliPlus/common/assets.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/dynamic/up_panel_position.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
@@ -35,6 +37,10 @@ class _UpPanelState extends State<UpPanel> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // iOS：强调色固定品牌粉。
+    final accentColor = Adaptive.isIOS(context)
+        ? IosColors.brandPink
+        : theme.colorScheme.primary;
     final upData = widget.upData;
     final upList = upData.upList;
     final liveList = upData.liveUsers?.items;
@@ -58,7 +64,7 @@ class _UpPanelState extends State<UpPanel> {
                 textAlign: .center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: theme.colorScheme.primary,
+                  color: accentColor,
                 ),
                 TextSpan(
                   children: [
@@ -74,7 +80,7 @@ class _UpPanelState extends State<UpPanel> {
                               ? Icons.expand_less
                               : Icons.expand_more,
                           size: 12,
-                          color: theme.colorScheme.primary,
+                          color: accentColor,
                         ),
                       ),
                     ] else
@@ -84,7 +90,7 @@ class _UpPanelState extends State<UpPanel> {
                           controller.showLiveUp
                               ? Icons.keyboard_arrow_right
                               : Icons.keyboard_arrow_left,
-                          color: theme.colorScheme.primary,
+                          color: accentColor,
                           size: 14,
                         ),
                       ),
@@ -138,6 +144,12 @@ class _UpPanelState extends State<UpPanel> {
     final currentMid = controller.currentMid;
     final isLive = item is LiveUserItem;
     final isCurrent = isLive || currentMid == item.mid || currentMid == -1;
+    final isIOS = Adaptive.isIOS(context);
+    // iOS：选中用品牌粉、未选中用次要文字色，不再靠整体透明度压暗。
+    final brandColor = isIOS ? IosColors.brandPink : theme.colorScheme.primary;
+    final idleColor = isIOS
+        ? IosColors.secondaryLabel(theme.brightness)
+        : theme.colorScheme.outline;
 
     final isAll = item.mid == -1;
     void toMemberPage() => Get.toNamed('/member?mid=${item.mid}');
@@ -194,7 +206,7 @@ class _UpPanelState extends State<UpPanel> {
               right: 4,
               child: Badge(
                 smallSize: 8,
-                backgroundColor: theme.colorScheme.primary,
+                backgroundColor: brandColor,
               ),
             ),
           ],
@@ -218,7 +230,7 @@ class _UpPanelState extends State<UpPanel> {
         onLongPress: !isAll ? toMemberPage : null,
         onSecondaryTap: !isAll && !PlatformUtils.isMobile ? toMemberPage : null,
         child: Opacity(
-          opacity: isCurrent ? 1 : 0.6,
+          opacity: isCurrent || isIOS ? 1 : 0.6,
           child: Column(
             spacing: 4,
             mainAxisSize: .min,
@@ -233,9 +245,7 @@ class _UpPanelState extends State<UpPanel> {
                   textAlign: .center,
                   overflow: .ellipsis,
                   style: TextStyle(
-                    color: currentMid == item.mid
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outline,
+                    color: currentMid == item.mid ? brandColor : idleColor,
                     height: 1.1,
                     fontSize: 12.5,
                   ),

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/pages/common/page_order/page_order_mixin.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart';
@@ -6,7 +7,7 @@ mixin PageOrderBtnMixin<S extends StatefulWidget, R, T> on State<S> {
   PageOrderMixin<R, T> get controller;
 
   Widget get pageOrderBtn => Builder(
-    builder: (context) => PopupMenuButton<bool>(
+    builder: (context) => PLPopupMenuButton<bool>(
       icon: controller.pageDesc
           ? const Icon(MdiIcons.sortNumericDescending)
           : const Icon(MdiIcons.sortNumericAscending),

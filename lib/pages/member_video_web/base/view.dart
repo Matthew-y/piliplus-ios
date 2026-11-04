@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -48,7 +49,7 @@ abstract class BaseVideoWebState<
           Obx(
             () {
               final order = controller.order.value;
-              return PopupMenuButton<V>(
+              return PLPopupMenuButton<V>(
                 tooltip: '排序',
                 icon: const Icon(Icons.sort),
                 initialValue: order,

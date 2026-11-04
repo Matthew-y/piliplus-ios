@@ -1087,6 +1087,10 @@ abstract final class Pref {
   static bool get enableEmoteTooltip =>
       _setting.get(SettingBoxKey.enableEmoteTooltip, defaultValue: false);
 
+  /// iOS 外观模式索引，见 `IosStyleMode`。
+  static int get iosStyleModeIndex =>
+      _setting.get(SettingBoxKey.iosStyle, defaultValue: 0);
+
   static Set<MineTabType> get mineTabs =>
       (_setting.get(SettingBoxKey.mineTabs) as List?)
           ?.map<MineTabType>((index) => .values[index])

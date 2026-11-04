@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
+import 'package:PiliPlus/utils/ios_style.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:material_ui/material_ui.dart';
@@ -9,7 +10,9 @@ Widget tabBarView({
   HitTestBehavior hitTestBehavior = .opaque,
 }) => TabBarView(
   controller: controller,
-  physics: tabBarScrollPhysics,
+  physics: IosStyle.isIOSStyleEnabled
+      ? _tabBarBouncingScrollPhysics
+      : tabBarScrollPhysics,
   hitTestBehavior: hitTestBehavior,
   horizontalDragGestureRecognizer: CustomHorizontalDragGestureRecognizer.new,
   children: children,
@@ -38,6 +41,18 @@ class _TabBarViewScrollPhysics extends ClampingScrollPhysics {
 
   @override
   SpringDescription get spring => kSpringDescription;
+}
+
+/// iOS 风格下的 Tab 切换物理：到边缘可回弹，与 iOS 的分页观感一致。
+const _tabBarBouncingScrollPhysics = _TabBarViewBouncingScrollPhysics();
+
+class _TabBarViewBouncingScrollPhysics extends BouncingScrollPhysics {
+  const _TabBarViewBouncingScrollPhysics({super.parent});
+
+  @override
+  _TabBarViewBouncingScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return _TabBarViewBouncingScrollPhysics(parent: buildParent(ancestor));
+  }
 }
 
 mixin ReloadMixin {

@@ -2,6 +2,7 @@ import 'dart:math' show min;
 
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/gesture/tap_gesture_recognizer.dart';
@@ -113,7 +114,7 @@ class _AudioPageState extends State<AudioPage> {
             }),
           Builder(
             builder: (context) {
-              return PopupMenuButton<ListOrder>(
+              return PLPopupMenuButton<ListOrder>(
                 tooltip: '排序',
                 icon: const Icon(Icons.sort, size: 22),
                 initialValue: _controller.order,

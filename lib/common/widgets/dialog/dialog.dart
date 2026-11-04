@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -5,9 +7,21 @@ Future<bool> showConfirmDialog({
   required BuildContext context,
   required Widget title,
   Widget? content,
+  bool destructive = false,
   // @Deprecated('use `bool result = await showConfirmDialog()` instead')
   VoidCallback? onConfirm,
 }) async {
+  if (Adaptive.isIOS(context)) {
+    final result = await showPLConfirmDialog(
+      context: context,
+      title: title,
+      content: content,
+      destructive: destructive,
+    );
+    if (result) onConfirm?.call();
+    return result;
+  }
+
   return await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -26,7 +40,12 @@ Future<bool> showConfirmDialog({
                 Get.back(result: true);
                 onConfirm?.call();
               },
-              child: const Text('确认'),
+              child: Text(
+                '确认',
+                style: destructive
+                    ? TextStyle(color: ColorScheme.of(context).error)
+                    : null,
+              ),
             ),
           ],
         ),

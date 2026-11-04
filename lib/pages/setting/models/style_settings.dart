@@ -37,6 +37,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/ios_style.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -172,6 +173,17 @@ List<SettingsModel> get styleSettings => [
     leading: Icon(Icons.fit_screen_outlined),
     setKey: SettingBoxKey.removeSafeArea,
     defaultVal: false,
+  ),
+  PopupModel(
+    title: '界面风格',
+    subtitle: '开启 iOS 风格后，导航栏、底栏、弹窗、开关等会采用 iOS 观感',
+    leading: const Icon(Icons.phone_iphone),
+    value: () => IosStyle.mode,
+    items: IosStyleMode.values,
+    onSelected: (value, setState) {
+      IosStyle.setMode(value).whenComplete(setState);
+      SmartDialog.showToast('已切换界面风格');
+    },
   ),
   const SwitchModel(
     title: '视频播放页使用深色主题',

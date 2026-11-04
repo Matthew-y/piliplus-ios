@@ -1,7 +1,12 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_search_field.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_segmented_tabs.dart';
 import 'package:PiliPlus/common/widgets/custom_height_widget.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/models/common/home_tab_type.dart';
 import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
@@ -41,6 +46,28 @@ class _HomePageState extends CommonPageState<HomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isIOS = Adaptive.isIOS(context);
+    final body = Expanded(
+      child: onBuild(
+        tabBarView(
+          controller: _homeController.tabController,
+          children: _homeController.tabs.map((e) => e.page).toList(),
+        ),
+      ),
+    );
+
+    // iOS 风格：搜索栏 + Tab 栏包进同一个纯白顶栏（见需求二.4）。
+    if (isIOS) {
+      return Column(
+        children: [
+          if (!_mainController.useSideBar &&
+              MediaQuery.sizeOf(context).isPortrait)
+            _iosHeader(),
+          body,
+        ],
+      );
+    }
+
     Widget tabBar;
     if (_homeController.tabs.length > 1) {
       tabBar = Padding(
@@ -81,19 +108,73 @@ class _HomePageState extends CommonPageState<HomePage>
             MediaQuery.sizeOf(context).isPortrait)
           customAppBar(),
         tabBar,
-        Expanded(
-          child: onBuild(
-            tabBarView(
-              controller: _homeController.tabController,
-              children: _homeController.tabs.map((e) => e.page).toList(),
-            ),
-          ),
-        ),
+        body,
       ],
     );
   }
 
+  /// iOS 风格的顶栏：搜索栏 + Tab 栏整体作为一个单元。
+  ///
+  /// 用户要求：首页搜索区与分段控件区背景改为**纯白**。
+  /// - 浅色模式：纯白底（`Colors.white`），与灰底搜索框 / 分段轨道形成层次。
+  /// - 深色模式：取 [ThemeData.canvasColor]，避免白底导致文字/滑块不可读，
+  ///   同时与状态栏那条留白的底色一致（不能硬用纯黑，否则出现色带）。
+  /// - 向上滑动时搜索栏收起、Tab 栏随之上移（两者一起「收起」），
+  ///   顶栏高度自然变小，露出下方内容。
+  Widget _iosHeader() {
+    return ColoredBox(
+      color: _headerBackground,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _iosTopBar(),
+          if (_homeController.tabs.length > 1)
+            Padding(
+              // 与上方搜索栏留出间距：搜索栏自身有 8 的底边距，这里再加 8。
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: _iosSegmentedTabs(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 顶栏底色：浅色纯白，深色跟随 canvas。
+  Color get _headerBackground => IosColors.headerBackground(context);
+
+  /// iOS 风格顶部 Tab：原生分段控件（浅灰轨道 + 白色滑块，无下划线）。
+  ///
+  /// 用 [AnimatedBuilder] 跟随 [TabController]，index 变化时重建并让滑块
+  /// 平滑过渡。
+  Widget _iosSegmentedTabs() {
+    final tabs = _homeController.tabs;
+    return AnimatedBuilder(
+      animation: _homeController.tabController,
+      builder: (context, _) {
+        return PLSegmentedTabs<HomeTabType>(
+          values: tabs,
+          labelOf: (e) => e.label,
+          groupValue: tabs[_homeController.tabController.index],
+          onValueChanged: (value) {
+            final index = tabs.indexOf(value);
+            if (index < 0) return;
+            feedBack();
+            // CupertinoSlidingSegmentedControl 不会自动驱动 TabController，
+            // 需手动 animateTo；index 同步更新后 AnimatedBuilder 触发滑块动画。
+            _homeController.tabController.animateTo(index);
+            // animateTo 已同步把 index 切到新页，这里滚到顶部。
+            _homeController.animateToTop();
+          },
+        );
+      },
+    );
+  }
+
   Widget customAppBar() {
+    if (Adaptive.isIOS(context)) {
+      return _iosTopBar();
+    }
     const padding = EdgeInsets.fromLTRB(14, 6, 14, 0);
     final child = Row(
       children: [
@@ -144,6 +225,89 @@ class _HomePageState extends CommonPageState<HomePage>
     );
   }
 
+  /// iOS 风格顶栏：搜索框一行，右侧紧跟消息与头像。
+  ///
+  /// 背景与顶栏一致（浅色纯白）；搜索框本身用 systemGray5，在白底上自然区分。
+  ///
+  /// 滚动收起时整体上移，露出内容——与 iOS 的行为一致。
+  Widget _iosTopBar() {
+    final child = ColoredBox(
+      // 与顶栏整体同色（浅色纯白；深色 canvas）。
+      color: _headerBackground,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 12, 8),
+        child: Row(
+          children: [
+            Expanded(child: _iosSearchBar()),
+            const SizedBox(width: 8),
+            msgBadge(_mainController, size: 28),
+          ],
+        ),
+      ),
+    );
+
+    if (_homeController.hideTopBar) {
+      if (_mainController.barOffset case final barOffset?) {
+        return Obx(
+          () {
+            final offset = barOffset.value;
+            return CustomHeightWidget(
+              offset: Offset(0, -offset),
+              height: Style.topBarHeight - offset,
+              child: child,
+            );
+          },
+        );
+      }
+      if (_homeController.showTopBar case final showTopBar?) {
+        return Obx(() {
+          final show = showTopBar.value;
+          return AnimatedOpacity(
+            opacity: show ? 1 : 0,
+            duration: const Duration(milliseconds: 300),
+            child: AnimatedContainer(
+              curve: Curves.easeInOutCubicEmphasized,
+              duration: const Duration(milliseconds: 500),
+              height: show ? Style.topBarHeight : 0,
+              child: child,
+            ),
+          );
+        });
+      }
+    }
+    // 整行已经是纯白（ColoredBox），外面不能再套 Material(surface)。
+    return SizedBox(height: Style.topBarHeight, child: child);
+  }
+
+  /// iOS 搜索框：灰底圆角矩形 + 放大镜图标，无水波纹。
+  ///
+  /// 宽度由外层的 [Expanded] 控制，这里不能用 [Expanded]（会嵌套），
+  /// 所以用 [PLSearchField] 的紧凑形态（margin 传零边距）。
+  Widget _iosSearchBar() {
+    return PLSearchField.builder(
+      placeholderBuilder: (context) => Obx(
+        () => Text(
+          _homeController.searchHint,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 17,
+            height: 1,
+            color: _colorScheme.outline,
+          ),
+        ),
+      ),
+      onTap: () => Get.toNamed(
+        '/search',
+        parameters: _homeController.enableSearchWord
+            ? {'hintText': _homeController.defaultSearch.value}
+            : null,
+      ),
+      margin: EdgeInsets.zero,
+      bottomPadding: 0,
+    );
+  }
+
   Widget searchBar() {
     const borderRadius = BorderRadius.all(Radius.circular(25));
     return Expanded(
@@ -175,7 +339,7 @@ class _HomePageState extends CommonPageState<HomePage>
                 Expanded(
                   child: Obx(
                     () => Text(
-                      _homeController.defaultSearch.value,
+                      _homeController.searchHint,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: _colorScheme.outline),
@@ -195,6 +359,7 @@ class _HomePageState extends CommonPageState<HomePage>
 Widget userAvatar({
   required ColorScheme colorScheme,
   required MainController mainController,
+  double size = 34,
 }) {
   return Semantics(
     label: "我的",
@@ -206,8 +371,8 @@ Widget userAvatar({
             children: [
               NetworkImgLayer(
                 type: .avatar,
-                width: 34,
-                height: 34,
+                width: size,
+                height: size,
                 src: mainController.accountService.face.value,
               ),
               Positioned.fill(
@@ -248,8 +413,8 @@ Widget userAvatar({
           );
         }
         return SizedBox(
-          width: 38,
-          height: 38,
+          width: size + 4,
+          height: size + 4,
           child: IconButton(
             tooltip: '点击登录',
             style: IconButton.styleFrom(
@@ -269,7 +434,7 @@ Widget userAvatar({
   );
 }
 
-Widget msgBadge(MainController mainController) {
+Widget msgBadge(MainController mainController, {double? size}) {
   return Obx(
     () {
       if (mainController.accountService.isLogin.value) {
@@ -277,11 +442,12 @@ Widget msgBadge(MainController mainController) {
         final isNumBadge = mainController.msgBadgeMode == .number;
         return IconButton(
           tooltip: '消息',
-          onPressed: () {
-            mainController
-              ..clearUnreadMsg()
-              ..lastCheckUnreadAt = DateTime.now().millisecondsSinceEpoch;
-            Get.toNamed('/whisper');
+          onPressed: () async {
+            // 不在点击瞬间清角标：未读只由服务端接口决定。
+            // 进入消息页后返回时重新拉取，避免「点开即已读」的假象；
+            // 同时不再顺延 lastCheckUnreadAt，让轮询仍按原周期检查新消息。
+            await Get.toNamed('/whisper');
+            mainController.queryUnreadMsg();
           },
           icon: Badge(
             isLabelVisible:
@@ -292,6 +458,12 @@ Widget msgBadge(MainController mainController) {
             label: isNumBadge && count != null ? Text(count) : null,
             child: const Icon(Icons.notifications_none),
           ),
+          // IconButton 默认 48x48 约束，iOS 顶栏里要跟搜索框等高。
+          constraints: size == null
+              ? null
+              : BoxConstraints.tightFor(width: size, height: size),
+          padding: size == null ? null : EdgeInsets.zero,
+          iconSize: size == null ? null : size * 0.7,
         );
       }
       return const SizedBox.shrink();

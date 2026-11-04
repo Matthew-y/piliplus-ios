@@ -2,6 +2,7 @@ import 'dart:async' show Timer;
 import 'dart:convert' show jsonDecode;
 
 import 'package:PiliPlus/common/constants.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/selection_text.dart';
@@ -110,7 +111,7 @@ class _LogsPageState extends State<LogsPage> {
       appBar: AppBar(
         title: const Text('日志'),
         actions: [
-          PopupMenuButton(
+          PLPopupMenuButton(
             itemBuilder: (_) => [
               if (kDebugMode)
                 PopupMenuItem(

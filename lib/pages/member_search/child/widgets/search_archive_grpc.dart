@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
@@ -117,7 +118,7 @@ class SearchArchiveGrpc extends StatelessWidget {
             right: 12,
             width: 29,
             height: 29,
-            child: PopupMenuButton(
+            child: PLPopupMenuButton(
               padding: EdgeInsets.zero,
               icon: Icon(
                 Icons.more_vert_outlined,

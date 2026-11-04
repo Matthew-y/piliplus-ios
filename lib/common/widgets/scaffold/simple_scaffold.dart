@@ -21,7 +21,10 @@ class SimpleScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: backgroundColor,
+      // backgroundColor 不传时，退回全局页面底色（iOS 下是 systemGroupedBackground
+      // 的浅灰），而不是 Material 默认的 canvasColor（白色），
+      // 否则设置页等带 AppBar 的页面顶部会出现白色色块。
+      color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
       child: ScaffoldLayout(
         fab: fab,
         appBar: appBar,

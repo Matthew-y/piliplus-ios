@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/draggable_sheet/dyn.dart';
 import 'package:PiliPlus/common/widgets/marquee.dart';
 import 'package:PiliPlus/pages/live_room/controller.dart';
@@ -241,7 +242,7 @@ class _LiveHeaderControlState extends State<LiveHeaderControl>
           if (plPlayerController.videoPlayerController case final player?)
             SizedBox.square(
               dimension: 30,
-              child: PopupMenuButton(
+              child: PLPopupMenuButton(
                 iconSize: 18,
                 padding: .zero,
                 iconColor: Colors.white,

@@ -1,4 +1,4 @@
-import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
@@ -22,6 +22,7 @@ class PopupListTile<T> extends StatefulWidget {
     this.enabled = true,
     this.leading,
     required this.title,
+    this.subtitle,
     this.descPosType = .subtitle,
     required this.value,
     required this.itemBuilder,
@@ -35,6 +36,9 @@ class PopupListTile<T> extends StatefulWidget {
   final bool enabled;
   final Widget? leading;
   final Widget title;
+
+  /// 标题下方的补充说明。
+  final String? subtitle;
 
   final DescPosType descPosType;
   final ValueGetter<(T, String)> value;
@@ -50,13 +54,17 @@ class PopupListTile<T> extends StatefulWidget {
 class _PopupListTileState<T> extends State<PopupListTile<T>> {
   final _key = PlatformUtils.isDesktop ? null : GlobalKey();
 
-  void _showButtonMenu(TapUpDetails details, T value) {
-    final thisOffset = details.globalPosition - details.localPosition;
+  /// 用行自身的 RenderBox 定位菜单。
+  ///
+  /// 不能只依赖 `onTapUp`：iOS 分支的 `PLListTile` 使用 `CupertinoListTile`，
+  /// 它只支持 `onTap`，传入 `onTapUp` 会被丢弃——设置里的下拉项会全部点不动。
+  void _showButtonMenu(T value) {
+    final thisBox = context.findRenderObject() as RenderBox;
+    final thisOffset = thisBox.localToGlobal(.zero);
     final double dx;
     if (PlatformUtils.isDesktop) {
-      dx = details.globalPosition.dx + 1;
+      dx = thisOffset.dx + 1;
     } else {
-      final thisBox = context.findRenderObject();
       final titleBox = _key!.currentContext!.findRenderObject() as RenderBox;
       final titleOffset = titleBox.localToGlobal(.zero, ancestor: thisBox);
       dx = thisOffset.dx + titleOffset.dx;
@@ -95,9 +103,18 @@ class _PopupListTileState<T> extends State<PopupListTile<T>> {
             : theme.disabledColor,
       ),
     );
+    // 设置项自带的补充说明。
+    final extraSubtitle = widget.subtitle == null
+        ? null
+        : Text(
+            widget.subtitle!,
+            style: theme.textTheme.labelMedium!.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          );
     switch (widget.descPosType) {
       case DescPosType.subtitle:
-        subtitle = desc;
+        subtitle = extraSubtitle == null ? desc : _stack(extraSubtitle, desc);
       case DescPosType.title:
         title = Row(
           spacing: 12,
@@ -107,11 +124,11 @@ class _PopupListTileState<T> extends State<PopupListTile<T>> {
       case DescPosType.trailing:
         trailing = desc;
     }
-    return ListTile(
+    return PLListTile(
       dense: widget.dense,
       safeArea: widget.safeArea,
       enabled: widget.enabled,
-      onTapUp: (details) => _showButtonMenu(details, value),
+      onTap: () => _showButtonMenu(value),
       leading: widget.leading,
       title: title,
       titleTextStyle: widget.titleStyle ?? theme.textTheme.titleMedium,
@@ -119,4 +136,11 @@ class _PopupListTileState<T> extends State<PopupListTile<T>> {
       trailing: trailing,
     );
   }
+
+  /// 副标题槽位里同时放两行文字（补充说明 + 右侧描述）。
+  static Widget _stack(Widget first, Widget second) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [first, second],
+  );
 }

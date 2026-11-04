@@ -1,5 +1,6 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_switch.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
-import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -94,13 +95,13 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
     final switchBtn = Transform.scale(
       scale: 0.8,
       alignment: .centerRight,
-      child: Switch(
+      child: PLSwitch(
         value: val,
         onChanged: switchChange,
       ),
     );
 
-    Widget child(Widget? trailing) => ListTile(
+    Widget child(Widget? trailing) => PLListTile(
       contentPadding: widget.contentPadding,
       enabled: widget.onTap == null ? true : val,
       onTap: widget.onTap == null ? switchChange : () => widget.onTap!(context),

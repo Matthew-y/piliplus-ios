@@ -1,4 +1,6 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoActivityIndicator;
 import 'package:material_ui/material_ui.dart';
 
 // ignore: camel_case_types
@@ -67,24 +69,28 @@ class _RefreshIndicatorState extends State<RefreshIndicator_>
 
   @override
   Widget build(BuildContext context) {
+    // iOS：原生下拉刷新是灰色菊花，没有白色圆底和卡片阴影。
+    final isIOS = Adaptive.isIOS(context);
     return ScaleTransition(
       scale: _scaleController,
       child: Center(
-        child: SizedBox.square(
-          dimension: 40,
-          child: Material(
-            type: .circle,
-            elevation: 2.0,
-            color: _color,
-            child: Padding(
-              padding: const .all(6),
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                controller: _progressController,
+        child: isIOS
+            ? const CupertinoActivityIndicator(radius: 12)
+            : SizedBox.square(
+                dimension: 40,
+                child: Material(
+                  type: .circle,
+                  elevation: 2.0,
+                  color: _color,
+                  child: Padding(
+                    padding: const .all(6),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      controller: _progressController,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -27,7 +28,7 @@ class PopupMenuText<T> extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('$title: '),
-        PopupMenuButton<T>(
+        PLPopupMenuButton<T>(
           initialValue: select,
           onSelected: (value) {
             if (value == select) return;

@@ -72,6 +72,7 @@ dependencies:
   connectivity_plus: ^7.1.1
   cookie_jar: ^4.0.8
   crypto: ^3.0.6
+  cupertino_icons: ^1.0.8
   cupertino_ui: ^1.0.0
   device_info_plus: ^13.1.0
   dio: ^5.9.1
@@ -178,6 +179,7 @@ dependencies:
     git:
       url: https://github.com/leanflutter/window_manager.git
       ref: main
+  flutter_slidable: ^5.2.0
 
 dependency_overrides:
   flutter_inappwebview_android:

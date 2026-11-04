@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
@@ -126,7 +127,7 @@ class _FollowPageState extends State<FollowPage>
               icon: const Icon(Icons.search_outlined),
               tooltip: '搜索',
             ),
-            PopupMenuButton(
+            PLPopupMenuButton(
               icon: const Icon(Icons.more_vert),
               itemBuilder: (context) => [
                 PopupMenuItem(

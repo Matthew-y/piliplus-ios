@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/avatars.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -16,6 +17,12 @@ class DynamicPanel extends StatelessWidget {
   final bool isDetail;
   final ValueChanged<Object>? onRemove;
   final bool isSave;
+
+  /// iOS 列表：把单条动态渲染成白色圆角卡片。
+  final bool isCard;
+
+  /// 卡片之间的垂直间距（也是列表第一项距离顶部的间距）。
+  static const cardGap = 12.0;
   final void Function(bool isTop, Object dynId)? onSetTop;
   final VoidCallback? onBlock;
   final VoidCallback? onUnfold;
@@ -31,6 +38,7 @@ class DynamicPanel extends StatelessWidget {
     this.isDetail = false,
     this.onRemove,
     this.isSave = false,
+    this.isCard = false,
     this.onSetTop,
     this.onBlock,
     this.onUnfold,
@@ -121,6 +129,17 @@ class DynamicPanel extends StatelessWidget {
         ),
       ),
     );
+    if (isCard) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, cardGap),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: IosColors.secondaryGroupedBackground(theme.brightness),
+          borderRadius: const .all(.circular(12)),
+        ),
+        child: child,
+      );
+    }
     if (isSave || (isDetail && !isDetailPortraitW)) {
       return child;
     }

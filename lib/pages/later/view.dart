@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
@@ -215,7 +216,7 @@ class _LaterPageState extends State<LaterPage>
             key: _sortKey,
             builder: (context) {
               final value = currCtr().asc.value;
-              return PopupMenuButton(
+              return PLPopupMenuButton(
                 initialValue: value,
                 tooltip: '排序',
                 onSelected: (value) => currCtr()
@@ -260,7 +261,7 @@ class _LaterPageState extends State<LaterPage>
               );
             },
           ),
-          PopupMenuButton(
+          PLPopupMenuButton(
             tooltip: '清空',
             borderRadius: const .all(.circular(20)),
             child: Padding(

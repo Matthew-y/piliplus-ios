@@ -4,6 +4,7 @@ import 'dart:io' show Platform, File;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:PiliPlus/common/constants.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dialog/report.dart';
@@ -1170,7 +1171,7 @@ class HeaderControlState extends State<HeaderControl>
               const Expanded(child: Text('保存字幕')),
               const Text('格式: ', style: TextStyle(fontSize: 14)),
               Builder(
-                builder: (context) => PopupMenuButton<SubtitleFormat>(
+                builder: (context) => PLPopupMenuButton<SubtitleFormat>(
                   tooltip: '',
                   initialValue: format,
                   onSelected: (value) {

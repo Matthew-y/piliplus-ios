@@ -1,8 +1,11 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/font_utils.dart';
+import 'package:PiliPlus/utils/ios_style.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoThemeData;
+import 'package:cupertino_ui/cupertino_ui.dart'
+    show CupertinoPageTransitionsBuilder, CupertinoThemeData;
 import 'package:flutter/foundation.dart' show PlatformDispatcher;
 import 'package:material_ui/material_ui.dart';
 
@@ -57,20 +60,51 @@ abstract final class ThemeUtils {
       );
     }
 
+    final isIOS = IosStyle.isIOSStyleEnabled;
+    // iOS 语义色：需求要求页面底色用 systemGroupedBackground，
+    // 内容卡片用 systemBackground（纯白），两者不能被 Material 的粉色 surface 顶替。
+    final groupedBg = isIOS
+        ? IosColors.groupedBackground(isDark ? .dark : .light)
+        : colorScheme.surface;
+    final cardBg = isIOS
+        ? IosColors.secondaryGroupedBackground(isDark ? .dark : .light)
+        : colorScheme.surface;
+
     final theme = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       fontFamily: fontFamily,
       textTheme: textTheme,
+      // 「iOS 风格」开关的核心接入点。
+      // 设为 TargetPlatform.iOS 后，Flutter 内建的平台自适应行为会自动切换：
+      // AppBar 标题居中规则、Scrollbar 形态、PageTransitionsTheme 的转场、
+      // 以及各类 Cupertino 文本选择工具条。
+      platform: IosStyle.targetPlatform,
+      // 页面底色：iOS 风格用 systemGroupedBackground（浅灰），
+      // 非 iOS 风格保持原来的 surface。
+      scaffoldBackgroundColor: groupedBg,
       appBarTheme: AppBarTheme(
         elevation: 0,
         titleSpacing: 0,
-        centerTitle: false,
+        // iOS 风格下不指定 centerTitle，让 AppBar 按平台规则自己判定
+        // （0~1 个 action 时居中，≥2 个时靠左）——与 iOS 一致。
+        // 非 iOS 风格保持原来的左对齐。
+        centerTitle: isIOS ? null : false,
         scrolledUnderElevation: 0,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: groupedBg,
+        // iOS 导航栏底部有一条 hairline 分割线。
+        // 放在 theme 层，98 个 AppBar 调用点无需任何改动即可生效。
+        shape: isIOS
+            ? Border(
+                bottom: BorderSide(
+                  color: IosColors.separator(isDark ? .dark : .light),
+                  width: 0.5,
+                ),
+              )
+            : null,
         titleTextStyle: TextStyle(
-          fontSize: 16,
-          fontWeight: fontWeight,
+          fontSize: isIOS ? 17 : 16,
+          fontWeight: isIOS ? FontWeight.w600 : fontWeight,
           fontFamily: fontFamily,
           color: colorScheme.onSurface,
         ),
@@ -93,10 +127,17 @@ abstract final class ThemeUtils {
         surfaceTintColor: isDark ? colorScheme.surfaceContainerHighest : null,
       ),
       cardTheme: CardThemeData(
-        elevation: 1,
+        elevation: isIOS ? 0 : 1,
         margin: EdgeInsets.zero,
         shadowColor: Colors.transparent,
+        // iOS 的内容卡片是纯白（systemBackground），与浅灰页面底色形成层级。
+        color: cardBg,
         surfaceTintColor: isDark ? colorScheme.onSurfaceVariant : null,
+      ),
+      dividerTheme: DividerThemeData(
+        color: IosColors.separator(isDark ? .dark : .light),
+        thickness: 0.5,
+        space: 0.5,
       ),
       progressIndicatorTheme: isDark
           ? ProgressIndicatorThemeData(
@@ -117,10 +158,21 @@ abstract final class ThemeUtils {
         constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: colorScheme.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: Style.bottomSheetRadius,
-        ),
+        // iOS 的 sheet 浮在内容之上，用二级分组背景（比页面底色略深一层）。
+        backgroundColor: isIOS
+            ? IosColors.secondaryGroupedBackground(isDark ? .dark : .light)
+            : colorScheme.surface,
+        // iOS 18 的 sheet 顶部圆角是 12，且带一条拖拽把手。
+        shape: isIOS
+            ? const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              )
+            : const RoundedRectangleBorder(
+                borderRadius: Style.bottomSheetRadius,
+              ),
+        showDragHandle: isIOS,
+        elevation: isIOS ? 0 : null,
+        surfaceTintColor: isIOS ? Colors.transparent : null,
       ),
       // ignore: deprecated_member_use
       sliderTheme: const SliderThemeData(year2023: false),
@@ -159,9 +211,12 @@ abstract final class ThemeUtils {
           shadowColor: WidgetStatePropertyAll(Colors.transparent),
         ),
       ),
+      // 页面转场：iOS 风格下用 Cupertino 的横向滑动，
+      // 其余平台维持原有的 Android 缩放转场。
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         },
       ),
     );

@@ -120,6 +120,10 @@ abstract final class PiliScheme {
               (Route<dynamic> route) => route.isFirst,
             );
             return true;
+          case 'setting':
+            // bilibili://setting —— 深链直达设置页
+            Get.toNamed('/setting');
+            return true;
           case 'pgc':
             // bilibili://pgc/season/ep/123456?h5_awaken_params=random
             String? id = uriDigitRegExp.firstMatch(path)?.group(1);

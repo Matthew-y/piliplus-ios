@@ -1,7 +1,9 @@
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/loading_widget/empty_state.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -9,6 +11,8 @@ import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/msg/msg_like_detail/card.dart';
 import 'package:PiliPlus/models_new/msg/msg_like_detail/item.dart';
 import 'package:PiliPlus/pages/msg_feed_top/like_detail/controller.dart';
+import 'package:PiliPlus/pages/msg_feed_top/msg_feed_strings.dart';
+import 'package:PiliPlus/pages/msg_feed_top/msg_feed_style.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -32,15 +36,17 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('点赞详情')),
+      appBar: AppBar(title: const Text(MsgStrings.likeDetail)),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+              padding: MsgFeedStyle.sliverPadding(context).add(
+                EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+                ),
               ),
               sliver: Obx(
                 () => _buildBody(theme, _controller.loadingState.value),
@@ -66,33 +72,41 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
           ),
         );
       case Success(:final response):
-        final divider = Divider(
-          indent: 72,
-          endIndent: 20,
-          height: 6,
-          color: Colors.grey.withValues(alpha: 0.1),
-        );
+        // 接口可能只返回 card 不返回 items，兜底成空列表而不是强解包。
+        final items = response ?? const <MsgLikeDetailItem>[];
+        final card = _controller.card;
         return SliverMainAxisGroup(
           slivers: [
-            if (_controller.card != null) ...[
-              _buildCard(_controller.card!),
+            if (card != null) ...[
+              _buildCard(card, isLast: items.isEmpty),
               SliverToBoxAdapter(
-                child: Divider(
-                  height: 1,
-                  color: Colors.grey.withValues(alpha: 0.1),
-                ),
+                child: Adaptive.isIOS(context)
+                    ? const SizedBox(height: 12)
+                    : Divider(
+                        height: 1,
+                        color: Colors.grey.withValues(alpha: 0.1),
+                      ),
               ),
             ],
-            SliverList.separated(
-              itemCount: response!.length,
-              itemBuilder: (context, index) {
-                if (index == response.length - 1) {
-                  _controller.onLoadMore();
-                }
-                return _buildItem(theme, response[index]);
-              },
-              separatorBuilder: (context, index) => divider,
-            ),
+            if (items.isNotEmpty)
+              SliverList.separated(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  if (index == items.length - 1) {
+                    _controller.onLoadMore();
+                  }
+                  return _buildItem(
+                    theme,
+                    items[index],
+                    isFirst: card == null && index == 0,
+                    isLast: index == items.length - 1,
+                  );
+                },
+                separatorBuilder: (context, index) =>
+                    MsgFeedStyle.divider(context),
+              )
+            else if (card == null)
+              const EmptyState(message: MsgStrings.emptyLikeDetail),
           ],
         );
       case Error(:final errMsg):
@@ -103,57 +117,77 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
     }
   }
 
-  Widget _buildCard(MsgLikeDetailCard card) {
+  Widget _buildCard(MsgLikeDetailCard card, {required bool isLast}) {
     return SliverToBoxAdapter(
-      child: ListTile(
-        onTap: () {
-          if (_controller.uri != null) {
-            PiliScheme.routePushFromUrl(_controller.uri!);
-          }
-        },
-        title: Text('${card.business}: ${card.title}'),
+      child: MsgFeedStyle.card(
+        context,
+        ListTile(
+          tileColor: MsgFeedStyle.tileColor(context),
+          onTap: () {
+            if (_controller.uri != null) {
+              PiliScheme.routePushFromUrl(_controller.uri!);
+            }
+          },
+          title: Text('${card.business}: ${card.title}'),
+        ),
+        isFirst: true,
+        isLast: isLast,
       ),
     );
   }
 
-  Widget _buildItem(ThemeData theme, MsgLikeDetailItem item) {
-    return ListTile(
-      onTap: () => Get.toNamed('/member?mid=${item.user!.mid}'),
-      leading: NetworkImgLayer(
-        width: 45,
-        height: 45,
-        type: ImageType.avatar,
-        src: item.user!.avatar,
-      ),
-      title: Text.rich(
-        TextSpan(
-          children: [
-            TextSpan(
-              text: "${item.user!.nickname}",
-              style: theme.textTheme.titleSmall!.copyWith(
-                height: 1.5,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            TextSpan(
-              text: " 赞了我",
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+  Widget _buildItem(
+    ThemeData theme,
+    MsgLikeDetailItem item, {
+    required bool isFirst,
+    required bool isLast,
+  }) {
+    final user = item.user;
+    // 脏数据兜底：没有用户信息时跳过该条，避免 user!.mid 崩溃。
+    if (user == null) return const SizedBox.shrink();
+    return MsgFeedStyle.card(
+      context,
+      ListTile(
+        tileColor: MsgFeedStyle.tileColor(context),
+        onTap: () => Get.toNamed('/member?mid=${user.mid}'),
+        leading: NetworkImgLayer(
+          width: 45,
+          height: 45,
+          type: ImageType.avatar,
+          src: user.avatar,
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        DateFormatUtils.dateFormat(item.likeTime),
-        style: theme.textTheme.bodyMedium!.copyWith(
-          fontSize: 13,
-          color: theme.colorScheme.outline,
+        title: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: "${user.nickname}",
+                style: theme.textTheme.titleSmall!.copyWith(
+                  height: 1.5,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              TextSpan(
+                text: " 赞了我",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          DateFormatUtils.dateFormat(item.likeTime),
+          style: theme.textTheme.bodyMedium!.copyWith(
+            fontSize: 13,
+            color: theme.colorScheme.outline,
+          ),
         ),
       ),
+      isFirst: isFirst,
+      isLast: isLast,
     );
   }
 }

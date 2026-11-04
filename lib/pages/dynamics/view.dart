@@ -1,3 +1,6 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_segmented_tabs.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
@@ -10,6 +13,7 @@ import 'package:PiliPlus/pages/dynamics_create/view.dart';
 import 'package:PiliPlus/pages/dynamics_tab/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
+import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide DraggableScrollableSheet;
 
@@ -29,34 +33,89 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
   @override
   bool get wantKeepAlive => true;
 
-  Widget _createDynamicBtn(ColorScheme colorScheme, {bool isRight = true}) =>
-      Container(
-        width: 34,
-        height: 34,
-        margin: isRight ? const .only(right: 16) : const .only(left: 16),
-        child: IconButton(
-          tooltip: '发布动态',
-          style: ButtonStyle(
-            padding: const WidgetStatePropertyAll(EdgeInsets.zero),
-            backgroundColor: WidgetStatePropertyAll(
-              colorScheme.secondaryContainer,
-            ),
-          ),
-          onPressed: () => CreateDynPanel.onCreateDyn(context),
-          icon: Icon(
-            Icons.add,
-            size: 18,
-            color: colorScheme.onSecondaryContainer,
+  Widget _createDynamicBtn(ColorScheme colorScheme, {bool isRight = true}) {
+    // iOS：顶栏不再放「+」发布按钮（与 iOS 原生的导航栏层级不符），
+    // 发布入口保留在其他地方；这里直接不占位。
+    if (Adaptive.isIOS(context)) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: 34,
+      height: 34,
+      margin: isRight ? const .only(right: 16) : const .only(left: 16),
+      child: IconButton(
+        tooltip: '发布动态',
+        style: ButtonStyle(
+          padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+          backgroundColor: WidgetStatePropertyAll(
+            colorScheme.secondaryContainer,
           ),
         ),
-      );
+        onPressed: () => CreateDynPanel.onCreateDyn(context),
+        icon: Icon(
+          Icons.add,
+          size: 18,
+          color: colorScheme.onSecondaryContainer,
+        ),
+      ),
+    );
+  }
+
+  /// iOS 顶栏：分段控件（全部 / 投稿 / 番剧 / 专栏 / UP）。
+  ///
+  /// 去掉了 Material 的底部下划线；底色与首页顶栏一致（浅色纯白 / 深色 canvas）。
+  /// 没有「+」后，分段控件占满整行，左右各留 16。
+  Widget _iosTopBar({Widget? leading, required Widget actions}) {
+    return ColoredBox(
+      color: IosColors.headerBackground(context),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Row(
+          children: [
+            ?leading,
+            Expanded(child: _iosSegmentedTabs()),
+            actions,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _iosSegmentedTabs() {
+    const tabs = DynamicsTabType.values;
+    return AnimatedBuilder(
+      animation: _dynamicsController.tabController,
+      builder: (context, _) {
+        return PLSegmentedTabs<DynamicsTabType>(
+          values: tabs,
+          labelOf: (e) => e.label,
+          groupValue: tabs[_dynamicsController.tabController.index],
+          onValueChanged: (value) {
+            final index = tabs.indexOf(value);
+            if (index < 0) return;
+            feedBack();
+            _dynamicsController.tabController.animateTo(index);
+            _dynamicsController.animateToTop();
+          },
+        );
+      },
+    );
+  }
 
   Widget upPanelPart(ColorScheme colorScheme) {
     final isTop = upPanelPosition == .top;
     final needBg = upPanelPosition.index > 2;
+    // iOS：UP 侧栏用系统分组背景，与右侧内容区（白 / 卡片）拉开层级。
+    // 横向（top）时不需要，它本身就是内容区上方的一条。
+    final isIOS = Adaptive.isIOS(context);
+    final Color? bgColor = isIOS && !isTop
+        ? IosColors.groupedBackground(Theme.of(context).brightness)
+        : needBg
+        ? colorScheme.surface
+        : null;
     return Material(
-      type: needBg ? .canvas : .transparency,
-      color: needBg ? colorScheme.surface : null,
+      type: bgColor != null ? .canvas : .transparency,
+      color: bgColor,
       child: SizedBox(
         width: isTop ? null : 64,
         height: isTop ? 76 : null,
@@ -116,6 +175,7 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
   Widget build(BuildContext context) {
     super.build(context);
     final colorScheme = ColorScheme.of(context);
+    final isIOS = Adaptive.isIOS(context);
 
     Widget? drawer;
     Widget? endDrawer;
@@ -170,37 +230,42 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.transparent,
       appBar: PreferredSize(
-        preferredSize: const .fromHeight(50),
-        child: Row(
-          children: [
-            ?leading,
-            Expanded(
-              child: TabBar(
-                dividerHeight: 0,
-                isScrollable: true,
-                tabAlignment: .start,
-                dividerColor: Colors.transparent,
-                labelColor: colorScheme.primary,
-                indicatorColor: colorScheme.primary,
-                controller: _dynamicsController.tabController,
-                unselectedLabelColor: colorScheme.onSurface,
-                labelStyle:
-                    TabBarTheme.of(context).labelStyle
-                        ?.copyWith(fontSize: 13) ??
-                    const TextStyle(fontSize: 13),
-                tabs: DynamicsTabType.values
-                    .map((e) => Tab(text: e.label))
-                    .toList(),
-                onTap: (index) {
-                  if (!_dynamicsController.tabController.indexIsChanging) {
-                    _dynamicsController.animateToTop();
-                  }
-                },
+        preferredSize: const .fromHeight(52),
+        child: isIOS
+            ? _iosTopBar(leading: leading, actions: actions)
+            : Row(
+                children: [
+                  ?leading,
+                  Expanded(
+                    child: TabBar(
+                      dividerHeight: 0,
+                      isScrollable: true,
+                      tabAlignment: .start,
+                      dividerColor: Colors.transparent,
+                      labelColor: colorScheme.primary,
+                      indicatorColor: colorScheme.primary,
+                      controller: _dynamicsController.tabController,
+                      unselectedLabelColor: colorScheme.onSurface,
+                      labelStyle:
+                          TabBarTheme.of(context).labelStyle?.copyWith(
+                            fontSize: 13,
+                          ) ??
+                          const TextStyle(fontSize: 13),
+                      tabs: DynamicsTabType.values
+                          .map((e) => Tab(text: e.label))
+                          .toList(),
+                      onTap: (index) {
+                        if (!_dynamicsController
+                            .tabController
+                            .indexIsChanging) {
+                          _dynamicsController.animateToTop();
+                        }
+                      },
+                    ),
+                  ),
+                  actions,
+                ],
               ),
-            ),
-            actions,
-          ],
-        ),
       ),
       drawer: drawer,
       endDrawer: endDrawer,

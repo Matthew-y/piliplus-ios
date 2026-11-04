@@ -1,3 +1,6 @@
+import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
@@ -19,6 +22,7 @@ class FavFolderItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final heroTag = Utils.makeHeroTag(item.id);
+    final isIOS = Adaptive.isIOS(context);
     return GestureDetector(
       onTap: () => Get.toNamed(
         '/favDetail',
@@ -34,24 +38,31 @@ class FavFolderItem extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.onInverseSurface.withValues(
-                    alpha: 0.4,
-                  ),
-                  offset: const Offset(6, -8),
-                  blurRadius: 0.0,
-                  spreadRadius: 0.0,
-                ),
-              ],
+              // iOS：圆角 8，保持简洁封面。
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
+              boxShadow: isIOS
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: theme.colorScheme.onInverseSurface.withValues(
+                          alpha: 0.4,
+                        ),
+                        offset: const Offset(6, -8),
+                        blurRadius: 0.0,
+                        spreadRadius: 0.0,
+                      ),
+                    ],
             ),
             child: Hero(
               tag: heroTag,
               child: NetworkImgLayer(
                 src: item.cover,
                 width: 180,
-                height: 110,
+                // 16:9，与 iOS 卡片一致。
+                height: isIOS ? 101.25 : 110,
+                borderRadius: isIOS
+                    ? const BorderRadius.all(Radius.circular(8))
+                    : Style.mdRadius,
               ),
             ),
           ),
@@ -65,7 +76,9 @@ class FavFolderItem extends StatelessWidget {
           Text(
             ' 共${item.mediaCount}条视频 · ${BiliUtils.isPublicFavText(item.attr)}',
             style: theme.textTheme.labelSmall!.copyWith(
-              color: theme.colorScheme.outline,
+              color: isIOS
+                  ? IosColors.secondaryLabel(theme.brightness)
+                  : theme.colorScheme.outline,
             ),
           ),
         ],

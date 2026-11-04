@@ -1,5 +1,6 @@
 import 'dart:io' show File;
 
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -188,7 +189,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
                 return Listener(
                   onPointerDown: (_) =>
                       FocusManager.instance.primaryFocus?.unfocus(),
-                  child: PopupMenuButton<int>(
+                  child: PLPopupMenuButton<int>(
                     initialValue: choiceCnt,
                     requestFocus: false,
                     onSelected: _controller.choiceCnt.call,

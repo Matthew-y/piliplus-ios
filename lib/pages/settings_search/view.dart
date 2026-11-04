@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_search_bar.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
@@ -67,34 +69,40 @@ class _SettingsSearchPageState
   @override
   Widget build(BuildContext context) {
     return SimpleScaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            onPressed: () {
-              if (_textEditingController.text.isNotEmpty) {
-                _textEditingController.clear();
-                _list.clear();
-              } else {
-                Get.back();
-              }
-            },
-            icon: const Icon(Icons.clear),
-          ),
-          const SizedBox(width: 10),
-        ],
-        title: TextField(
-          autofocus: true,
-          controller: _textEditingController,
-          textAlignVertical: TextAlignVertical.center,
-          onChanged: ctr!.add,
-          decoration: const InputDecoration(
-            isDense: true,
-            hintText: '搜索',
-            visualDensity: .standard,
-            border: InputBorder.none,
-          ),
-        ),
-      ),
+      // iOS：与搜索页同一套顶栏（圆角灰底输入框 + 取消，无返回箭头）。
+      appBar: Adaptive.isIOS(context)
+          ? PLSearchBar(
+              controller: _textEditingController,
+              onChanged: ctr!.add,
+            )
+          : AppBar(
+              actions: [
+                IconButton(
+                  onPressed: () {
+                    if (_textEditingController.text.isNotEmpty) {
+                      _textEditingController.clear();
+                      _list.clear();
+                    } else {
+                      Get.back();
+                    }
+                  },
+                  icon: const Icon(Icons.clear),
+                ),
+                const SizedBox(width: 10),
+              ],
+              title: TextField(
+                autofocus: true,
+                controller: _textEditingController,
+                textAlignVertical: TextAlignVertical.center,
+                onChanged: ctr!.add,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  hintText: '搜索',
+                  visualDensity: .standard,
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
       body: ViewInsetsSafeArea(
         child: CustomScrollView(
           slivers: [

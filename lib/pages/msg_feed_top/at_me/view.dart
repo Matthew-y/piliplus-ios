@@ -1,17 +1,16 @@
-import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/grpc/bilibili/app/im/v1.pbenum.dart'
     show IMSettingType;
-import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/msg/msg_at/item.dart';
 import 'package:PiliPlus/pages/msg_feed_top/at_me/controller.dart';
+import 'package:PiliPlus/pages/msg_feed_top/msg_feed_list_view.dart';
+import 'package:PiliPlus/pages/msg_feed_top/msg_feed_strings.dart';
+import 'package:PiliPlus/pages/msg_feed_top/msg_feed_style.dart';
 import 'package:PiliPlus/pages/whisper_settings/view.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
@@ -34,7 +33,7 @@ class _AtMePageState extends State<AtMePage> {
     final theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('@我的'),
+        title: const Text(MsgStrings.atMe),
         actions: [
           IconButton(
             onPressed: () => Get.to(
@@ -57,137 +56,121 @@ class _AtMePageState extends State<AtMePage> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+              padding: MsgFeedStyle.sliverPadding(context).add(
+                EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+                ),
               ),
-              sliver: Obx(
-                () => _buildBody(theme, _atMeController.loadingState.value),
+              sliver: buildMsgFeedSliver<MsgAtItem>(
+                context: context,
+                controller: _atMeController,
+                emptyMessage: MsgStrings.emptyAt,
+                itemBuilder:
+                    (
+                      context,
+                      item,
+                      index, {
+                      required bool isFirst,
+                      required bool isLast,
+                    }) {
+                      void onLongPress() => showConfirmDialog(
+                        context: context,
+                        title: const Text(MsgStrings.deleteNoticeTitle),
+                        destructive: true,
+                        onConfirm: () =>
+                            _atMeController.onRemove(item.id!, index),
+                      );
+                      return MsgFeedStyle.card(
+                        context,
+                        ListTile(
+                          safeArea: true,
+                          tileColor: MsgFeedStyle.tileColor(context),
+                          onTap: () {
+                            String? nativeUri = item.item?.nativeUri;
+                            if (nativeUri == null ||
+                                nativeUri.isEmpty ||
+                                nativeUri.startsWith('?')) {
+                              return;
+                            }
+                            PiliScheme.routePushFromUrl(nativeUri);
+                          },
+                          onLongPress: onLongPress,
+                          onSecondaryTap: PlatformUtils.isMobile
+                              ? null
+                              : onLongPress,
+                          leading: GestureDetector(
+                            onTap: () =>
+                                Get.toNamed('/member?mid=${item.user?.mid}'),
+                            child: NetworkImgLayer(
+                              width: 45,
+                              height: 45,
+                              type: ImageType.avatar,
+                              src: item.user?.avatar,
+                            ),
+                          ),
+                          title: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: "${item.user?.nickname}",
+                                  style: theme.textTheme.titleSmall!.copyWith(
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: " 在${item.item?.business}中@了我",
+                                  style: theme.textTheme.titleSmall!.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (item.item?.sourceContent?.isNotEmpty ==
+                                  true) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  item.item!.sourceContent!,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyMedium!.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormatUtils.dateFormat(item.atTime),
+                                style: theme.textTheme.bodyMedium!.copyWith(
+                                  fontSize: 13,
+                                  color: theme.colorScheme.outline,
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: item.item?.image?.isNotEmpty == true
+                              ? NetworkImgLayer(
+                                  width: 45,
+                                  height: 45,
+                                  src: item.item?.image,
+                                  borderRadius: const BorderRadius.all(
+                                    Radius.circular(8),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        isFirst: isFirst,
+                        isLast: isLast,
+                      );
+                    },
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildBody(
-    ThemeData theme,
-    LoadingState<List<MsgAtItem>?> loadingState,
-  ) {
-    switch (loadingState) {
-      case Loading():
-        return const SliverPrototypeExtentList(
-          prototypeItem: MsgFeedTopSkeleton(),
-          delegate: SliverSingleChildDelegate(
-            count: 12,
-            child: MsgFeedTopSkeleton(),
-          ),
-        );
-      case Success(:final response):
-        if (response != null && response.isNotEmpty) {
-          final divider = Divider(
-            indent: 72,
-            endIndent: 20,
-            height: 6,
-            color: Colors.grey.withValues(alpha: 0.1),
-          );
-          return SliverList.separated(
-            itemCount: response.length,
-            itemBuilder: (context, int index) {
-              if (index == response.length - 1) {
-                _atMeController.onLoadMore();
-              }
-              final item = response[index];
-              void onLongPress() => showConfirmDialog(
-                context: context,
-                title: const Text('确定删除该通知?'),
-                onConfirm: () => _atMeController.onRemove(item.id!, index),
-              );
-              return ListTile(
-                safeArea: true,
-                onTap: () {
-                  String? nativeUri = item.item?.nativeUri;
-                  if (nativeUri == null ||
-                      nativeUri.isEmpty ||
-                      nativeUri.startsWith('?')) {
-                    return;
-                  }
-                  PiliScheme.routePushFromUrl(nativeUri);
-                },
-                onLongPress: onLongPress,
-                onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-                leading: GestureDetector(
-                  onTap: () => Get.toNamed('/member?mid=${item.user?.mid}'),
-                  child: NetworkImgLayer(
-                    width: 45,
-                    height: 45,
-                    type: ImageType.avatar,
-                    src: item.user?.avatar,
-                  ),
-                ),
-                title: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: "${item.user?.nickname}",
-                        style: theme.textTheme.titleSmall!.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                      TextSpan(
-                        text: " 在${item.item?.business}中@了我",
-                        style: theme.textTheme.titleSmall!.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (item.item?.sourceContent?.isNotEmpty == true) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        item.item!.sourceContent!,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium!.copyWith(
-                          color: theme.colorScheme.outline,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormatUtils.dateFormat(item.atTime),
-                      style: theme.textTheme.bodyMedium!.copyWith(
-                        fontSize: 13,
-                        color: theme.colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-                trailing: item.item?.image?.isNotEmpty == true
-                    ? NetworkImgLayer(
-                        width: 45,
-                        height: 45,
-                        src: item.item?.image,
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(8),
-                        ),
-                      )
-                    : null,
-              );
-            },
-            separatorBuilder: (context, index) => divider,
-          );
-        }
-        return HttpError(onReload: _atMeController.onReload);
-      case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _atMeController.onReload,
-        );
-    }
   }
 }

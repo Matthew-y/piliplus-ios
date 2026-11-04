@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/route_aware_mixin.dart'
     show routeObserver;
 import 'package:PiliPlus/common/widgets/selection_text.dart';
@@ -97,7 +98,7 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
 
   List<Widget> get _actions {
     return [
-      PopupMenuButton<WebviewMenuItem>(
+      PLPopupMenuButton<WebviewMenuItem>(
         onSelected: _handleMenuItem,
         itemBuilder: (context) => <PopupMenuEntry<WebviewMenuItem>>[
           ...WebviewMenuItem.values

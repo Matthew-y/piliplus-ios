@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/http/search.dart';
@@ -99,7 +100,7 @@ class HistoryItem extends StatelessWidget {
               bottom: 0,
               width: 29,
               height: 29,
-              child: PopupMenuButton(
+              child: PLPopupMenuButton(
                 padding: EdgeInsets.zero,
                 tooltip: '功能菜单',
                 icon: Icon(

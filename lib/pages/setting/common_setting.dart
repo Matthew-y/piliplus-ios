@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_section.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
@@ -48,18 +50,37 @@ class _CommonSettingState extends State<CommonSetting> {
   @override
   Widget build(BuildContext context) {
     final showAppBar = widget.showAppBar;
+    final isIOS = Adaptive.isIOS(context);
     return SimpleScaffold(
       appBar: showAppBar ? AppBar(title: Text(widget.settingType.title)) : null,
-      body: ListView.builder(
-        key: ValueKey(widget.settingType),
-        padding: EdgeInsets.only(
-          left: showAppBar ? padding.left : 0,
-          right: showAppBar ? padding.right : 0,
-          bottom: padding.bottom + 100,
-        ),
-        itemCount: settings.length,
-        itemBuilder: (context, index) => settings[index].widget,
-      ),
+      body: isIOS
+          // iOS 风格：整页设置项包成一个 inset grouped 分组卡片。
+          ? ListView(
+              key: ValueKey(widget.settingType),
+              padding: EdgeInsets.only(
+                left: showAppBar ? padding.left : 0,
+                right: showAppBar ? padding.right : 0,
+                top: 8,
+                bottom: padding.bottom + 100,
+              ),
+              children: [
+                PLListSection(
+                  children: [
+                    for (final item in settings) item.widget,
+                  ],
+                ),
+              ],
+            )
+          : ListView.builder(
+              key: ValueKey(widget.settingType),
+              padding: EdgeInsets.only(
+                left: showAppBar ? padding.left : 0,
+                right: showAppBar ? padding.right : 0,
+                bottom: padding.bottom + 100,
+              ),
+              itemCount: settings.length,
+              itemBuilder: (context, index) => settings[index].widget,
+            ),
     );
   }
 }
