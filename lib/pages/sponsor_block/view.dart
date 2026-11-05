@@ -1,4 +1,8 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_section.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_switch.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/constants.dart';
@@ -76,7 +80,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
     TextStyle subTitleStyle,
   ) => Builder(
     builder: (context) {
-      return ListTile(
+      return PLListTile(
         dense: true,
         onTap: () {
           _textController.text = _blockLimit.toString();
@@ -129,12 +133,13 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
     },
   );
 
-  Widget _aboutItem(TextStyle titleStyle, TextStyle subTitleStyle) => ListTile(
-    dense: true,
-    title: Text('关于空降助手', style: titleStyle),
-    subtitle: Text(_url, style: subTitleStyle),
-    onTap: () => PageUtils.launchURL(_url),
-  );
+  Widget _aboutItem(TextStyle titleStyle, TextStyle subTitleStyle) =>
+      PLListTile(
+        dense: true,
+        title: Text('关于空降助手', style: titleStyle),
+        subtitle: Text(_url, style: subTitleStyle),
+        onTap: () => PageUtils.launchURL(_url),
+      );
 
   Widget _userIdItem(
     ThemeData theme,
@@ -142,7 +147,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
     TextStyle subTitleStyle,
   ) => Builder(
     builder: (context) {
-      return ListTile(
+      return PLListTile(
         dense: true,
         title: Text('用户ID', style: titleStyle),
         subtitle: Text(_userId, style: subTitleStyle),
@@ -220,20 +225,17 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
         (context as Element).markNeedsBuild();
       }
 
-      return ListTile(
+      return PLListTile(
         dense: true,
         onTap: update,
         title: Text(
           '显示跳过Toast',
           style: titleStyle,
         ),
-        trailing: Transform.scale(
-          alignment: Alignment.centerRight,
-          scale: 0.8,
-          child: Switch(
-            value: _blockToast,
-            onChanged: (val) => update(),
-          ),
+        trailing: PLSwitch(
+          value: _blockToast,
+          onChanged: (_) => update(),
+          materialScale: 0.8,
         ),
       );
     },
@@ -250,7 +252,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
         (context as Element).markNeedsBuild();
       }
 
-      return ListTile(
+      return PLListTile(
         dense: true,
         onTap: update,
         title: Text(
@@ -262,13 +264,10 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
           '此功能追踪您跳过了哪些片段，让用户知道他们提交的片段帮助了多少人。同时点赞会作为依据，确保垃圾信息不会污染数据库。在您每次跳过片段时，我们都会向服务器发送一条消息。希望大家开启此项设置，以便得到更准确的统计数据。:)',
           style: subTitleStyle,
         ),
-        trailing: Transform.scale(
-          alignment: Alignment.centerRight,
-          scale: 0.8,
-          child: Switch(
-            value: _blockTrack,
-            onChanged: (val) => update(),
-          ),
+        trailing: PLSwitch(
+          value: _blockTrack,
+          onChanged: (_) => update(),
+          materialScale: 0.8,
         ),
       );
     },
@@ -280,7 +279,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
     TextStyle subTitleStyle,
   ) => Obx(
     () {
-      return ListTile(
+      return PLListTile(
         dense: true,
         onTap: () {
           _userInfo.value = LoadingState.loading();
@@ -311,7 +310,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
     TextStyle subTitleStyle,
   ) => Builder(
     builder: (context) {
-      return ListTile(
+      return PLListTile(
         dense: true,
         onTap: () {
           _textController.text = _blockServer;
@@ -386,7 +385,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
           status = '错误';
           color = theme.colorScheme.error;
       }
-      return ListTile(
+      return PLListTile(
         dense: true,
         onTap: () {
           _serverStatus.value = null;
@@ -483,47 +482,90 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
 
     return SimpleScaffold(
       appBar: AppBar(title: const Text('空降助手')),
-      body: CustomScrollView(
-        slivers: [
-          dividerL,
-          SliverToBoxAdapter(child: _serverStatusItem(theme, titleStyle)),
-          dividerL,
-          SliverToBoxAdapter(
-            child: _blockLimitItem(theme, titleStyle, subTitleStyle),
-          ),
-          sliverDivider,
-          SliverToBoxAdapter(child: _blockToastItem(titleStyle)),
-          sliverDivider,
-          SliverToBoxAdapter(child: _blockTrackItem(titleStyle, subTitleStyle)),
-          sliverDivider,
-          SliverToBoxAdapter(
-            child: _blockUserInfo(theme, titleStyle, subTitleStyle),
-          ),
-          dividerL,
-          SliverList.separated(
-            itemCount: _blockSettings.length,
-            itemBuilder: (context, index) =>
-                _buildItem(theme, index, _blockSettings[index]),
-            separatorBuilder: (context, index) => divider,
-          ),
-          dividerL,
-          SliverToBoxAdapter(
-            child: _userIdItem(theme, titleStyle, subTitleStyle),
-          ),
-          sliverDivider,
-          SliverToBoxAdapter(
-            child: _blockServerItem(theme, titleStyle, subTitleStyle),
-          ),
-          dividerL,
-          SliverToBoxAdapter(child: _aboutItem(titleStyle, subTitleStyle)),
-          dividerL,
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 55 + MediaQuery.viewPaddingOf(context).bottom,
+      body: Adaptive.isIOS(context)
+          ? _buildIos(theme, titleStyle, subTitleStyle)
+          : CustomScrollView(
+              slivers: [
+                dividerL,
+                SliverToBoxAdapter(child: _serverStatusItem(theme, titleStyle)),
+                dividerL,
+                SliverToBoxAdapter(
+                  child: _blockLimitItem(theme, titleStyle, subTitleStyle),
+                ),
+                sliverDivider,
+                SliverToBoxAdapter(child: _blockToastItem(titleStyle)),
+                sliverDivider,
+                SliverToBoxAdapter(
+                  child: _blockTrackItem(titleStyle, subTitleStyle),
+                ),
+                sliverDivider,
+                SliverToBoxAdapter(
+                  child: _blockUserInfo(theme, titleStyle, subTitleStyle),
+                ),
+                dividerL,
+                SliverList.separated(
+                  itemCount: _blockSettings.length,
+                  itemBuilder: (context, index) =>
+                      _buildItem(theme, index, _blockSettings[index]),
+                  separatorBuilder: (context, index) => divider,
+                ),
+                dividerL,
+                SliverToBoxAdapter(
+                  child: _userIdItem(theme, titleStyle, subTitleStyle),
+                ),
+                sliverDivider,
+                SliverToBoxAdapter(
+                  child: _blockServerItem(theme, titleStyle, subTitleStyle),
+                ),
+                dividerL,
+                SliverToBoxAdapter(
+                  child: _aboutItem(titleStyle, subTitleStyle),
+                ),
+                dividerL,
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 55 + MediaQuery.viewPaddingOf(context).bottom,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+    );
+  }
+
+  /// iOS：三个 inset-grouped 分组，替代 Material 的 16px 粗分隔条。
+  Widget _buildIos(
+    ThemeData theme,
+    TextStyle titleStyle,
+    TextStyle subTitleStyle,
+  ) {
+    final padding = MediaQuery.viewPaddingOf(context);
+    return ListView(
+      padding: EdgeInsets.only(top: 8, bottom: padding.bottom + 60),
+      children: [
+        PLListSection(
+          children: [
+            _serverStatusItem(theme, titleStyle),
+            _blockLimitItem(theme, titleStyle, subTitleStyle),
+            _blockToastItem(titleStyle),
+            _blockTrackItem(titleStyle, subTitleStyle),
+            _blockUserInfo(theme, titleStyle, subTitleStyle),
+          ],
+        ),
+        PLListSection(
+          header: const Text('片段类型'),
+          children: [
+            for (var i = 0; i < _blockSettings.length; i++)
+              _buildItem(theme, i, _blockSettings[i]),
+          ],
+        ),
+        PLListSection(
+          children: [
+            _userIdItem(theme, titleStyle, subTitleStyle),
+            _blockServerItem(theme, titleStyle, subTitleStyle),
+            _aboutItem(titleStyle, subTitleStyle),
+          ],
+        ),
+      ],
     );
   }
 
@@ -536,7 +578,7 @@ class _SponsorBlockPageState extends State<SponsorBlockPage> {
       builder: (context) {
         Color color = _blockColor[index];
         final isDisable = item.second == SkipType.disable;
-        return ListTile(
+        return PLListTile(
           dense: true,
           enabled: item.second != SkipType.disable,
           onTap: () => onSelectColor(context, index, color, item),

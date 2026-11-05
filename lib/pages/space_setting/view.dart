@@ -1,5 +1,9 @@
 import 'dart:math';
 
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_section.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_switch.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -39,55 +43,9 @@ class _SpaceSettingPageState extends State<SpaceSettingPage> {
       Success<Privacy?>(:final response) =>
         response == null
             ? scrollErrorWidget(onReload: _controller.onReload)
-            : Builder(
-                builder: (context) {
-                  final padding = MediaQuery.viewPaddingOf(context);
-                  final divider = Divider(
-                    height: 1,
-                    indent: max(16, padding.left),
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                  );
-                  final dividerL = SliverToBoxAdapter(
-                    child: Divider(
-                      height: 12,
-                      thickness: 12,
-                      color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                    ),
-                  );
-                  return CustomScrollView(
-                    slivers: [
-                      dividerL,
-                      SliverList.separated(
-                        itemCount: response.list1.length,
-                        itemBuilder: (context, index) {
-                          return _item(response.list1[index]);
-                        },
-                        separatorBuilder: (context, index) => divider,
-                      ),
-                      dividerL,
-                      SliverList.separated(
-                        itemCount: response.list2.length,
-                        itemBuilder: (context, index) {
-                          return _item(response.list2[index]);
-                        },
-                        separatorBuilder: (context, index) => divider,
-                      ),
-                      dividerL,
-                      SliverList.separated(
-                        itemCount: response.list3.length,
-                        itemBuilder: (context, index) {
-                          return _item(response.list3[index]);
-                        },
-                        separatorBuilder: (context, index) => divider,
-                      ),
-                      dividerL,
-                      SliverToBoxAdapter(
-                        child: SizedBox(height: padding.bottom + 100),
-                      ),
-                    ],
-                  );
-                },
-              ),
+            : Adaptive.isIOS(context)
+            ? _buildIos(response)
+            : _buildMaterial(theme, response),
       Error(:final errMsg) => scrollErrorWidget(
         errMsg: errMsg,
         onReload: _controller.onReload,
@@ -95,40 +53,106 @@ class _SpaceSettingPageState extends State<SpaceSettingPage> {
     };
   }
 
-  Widget _item(SpaceSettingModel item) {
-    return Builder(
-      builder: (context) {
-        void onChanged([bool? value]) {
-          _controller.hasMod ??= true;
+  void _toggle(SpaceSettingModel item, [bool? value]) {
+    _controller.hasMod ??= true;
+    value ??= !item.boolVal;
+    item.value = item.isReverse
+        ? value
+              ? 0
+              : 1
+        : value
+        ? 1
+        : 0;
+    setState(() {});
+  }
 
-          value ??= !item.boolVal;
-          item.value = item.isReverse
-              ? value
-                    ? 0
-                    : 1
-              : value
-              ? 1
-              : 0;
-          (context as Element).markNeedsBuild();
-        }
-
-        return ListTile(
-          dense: true,
-          onTap: onChanged,
-          title: Text(
-            item.name,
-            style: const TextStyle(fontSize: 14),
-          ),
-          trailing: Transform.scale(
-            alignment: Alignment.centerRight,
-            scale: 0.8,
-            child: Switch(
-              value: item.boolVal,
-              onChanged: onChanged,
+  /// iOS：三个 inset-grouped 分组，开关用 CupertinoSwitch。
+  Widget _buildIos(Privacy response) {
+    final padding = MediaQuery.viewPaddingOf(context);
+    final groups = [response.list1, response.list2, response.list3];
+    return ListView(
+      padding: EdgeInsets.only(top: 8, bottom: padding.bottom + 100),
+      children: [
+        for (final group in groups)
+          if (group.isNotEmpty)
+            PLListSection(
+              children: [
+                for (final item in group)
+                  PLListTile(
+                    title: Text(
+                      item.name,
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    trailing: PLSwitch(
+                      value: item.boolVal,
+                      onChanged: (value) => _toggle(item, value),
+                    ),
+                    onTap: () => _toggle(item),
+                  ),
+              ],
             ),
-          ),
-        );
-      },
+      ],
+    );
+  }
+
+  Widget _buildMaterial(ThemeData theme, Privacy response) {
+    final padding = MediaQuery.viewPaddingOf(context);
+    final divider = Divider(
+      height: 1,
+      indent: max(16, padding.left),
+      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+    );
+    final dividerL = SliverToBoxAdapter(
+      child: Divider(
+        height: 12,
+        thickness: 12,
+        color: theme.colorScheme.outline.withValues(alpha: 0.1),
+      ),
+    );
+    return CustomScrollView(
+      slivers: [
+        dividerL,
+        SliverList.separated(
+          itemCount: response.list1.length,
+          itemBuilder: (context, index) => _item(response.list1[index]),
+          separatorBuilder: (context, index) => divider,
+        ),
+        dividerL,
+        SliverList.separated(
+          itemCount: response.list2.length,
+          itemBuilder: (context, index) => _item(response.list2[index]),
+          separatorBuilder: (context, index) => divider,
+        ),
+        dividerL,
+        SliverList.separated(
+          itemCount: response.list3.length,
+          itemBuilder: (context, index) => _item(response.list3[index]),
+          separatorBuilder: (context, index) => divider,
+        ),
+        dividerL,
+        SliverToBoxAdapter(
+          child: SizedBox(height: padding.bottom + 100),
+        ),
+      ],
+    );
+  }
+
+  Widget _item(SpaceSettingModel item) {
+    return ListTile(
+      dense: true,
+      onTap: () => _toggle(item),
+      title: Text(
+        item.name,
+        style: const TextStyle(fontSize: 14),
+      ),
+      trailing: Transform.scale(
+        alignment: Alignment.centerRight,
+        scale: 0.8,
+        child: Switch(
+          value: item.boolVal,
+          onChanged: (value) => _toggle(item, value),
+        ),
+      ),
     );
   }
 }

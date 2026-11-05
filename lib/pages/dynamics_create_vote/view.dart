@@ -1,6 +1,9 @@
 import 'dart:io' show File;
 
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_form.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_segmented_tabs.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -59,225 +62,454 @@ class _CreateVotePageState extends State<CreateVotePage> {
       appBar: AppBar(
         title: Text('${_controller.voteId != null ? '' : '发起'}投票'),
       ),
-      body: ListView(
-        padding: EdgeInsets.only(
-          left: padding.left + 16,
-          right: padding.right + 16,
-          bottom: padding.bottom + 100,
-        ),
-        children: [
-          const Text(
-            '投票类型',
-            style: TextStyle(fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          _buildType(theme),
-          const SizedBox(height: 40),
-          Obx(
-            () => _buildInput(
-              theme,
-              key: ValueKey('${_controller.key}title'),
-              initialValue: _controller.title.value,
-              onChanged: (value) => _controller
-                ..title.value = value
-                ..updateCanCreate(),
-              desc: '投票标题',
-              hintText: '请填写标题',
-              inputFormatters: [LengthLimitingTextInputFormatter(32)],
-            ),
-          ),
-          divider,
-          Obx(
-            () => _buildInput(
-              theme,
-              key: ValueKey('${_controller.key}desc'),
-              initialValue: _controller.desc.value,
-              onChanged: _controller.desc.call,
-              desc: '投票说明',
-              inputFormatters: [LengthLimitingTextInputFormatter(100)],
-            ),
-          ),
-          divider,
-          const SizedBox(height: 40),
-          Obx(
-            () {
-              final showImg = _controller.type.value == 1;
-              final showDel = _controller.options.length > 2;
-              List<Widget> children = [];
-              for (int i = 0; i < _controller.options.length; i++) {
-                final e = _controller.options[i];
-                children
-                  ..add(
-                    _buildInput(
-                      theme,
-                      key: ObjectKey(e),
-                      showDel: showDel,
-                      onDel: () {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        _controller.onDel(i);
-                      },
-                      showImg: showImg,
-                      imgUrl: e.imgUrl,
-                      onPickImg: () => EasyThrottle.throttle(
-                        'picImg',
-                        const Duration(milliseconds: 500),
-                        () => _onPickImg(i),
-                      ),
-                      initialValue: e.optDesc,
-                      onChanged: (value) => _controller
-                        ..options[i].optDesc = value
-                        ..updateCanCreate(),
-                      desc: '选项${i + 1}',
-                      hintText: '选项内容，最多20字',
-                      inputFormatters: [LengthLimitingTextInputFormatter(20)],
-                    ),
-                  )
-                  ..add(divider);
-              }
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...children,
-                  if (_controller.options.length < 20)
-                    FilledButton(
-                      onPressed: () => _controller
-                        ..options.add(Option(optDesc: '', imgUrl: ''))
-                        ..updateCanCreate(),
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.zero,
-                        padding: const EdgeInsets.only(
-                          left: 10,
-                          right: 14,
-                          top: 4,
-                          bottom: 4,
-                        ),
-                        visualDensity: .standard,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: theme.colorScheme.onSurfaceVariant,
-                        backgroundColor: theme.colorScheme.onInverseSurface,
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add, size: 16),
-                          Text(
-                            ' 添加选项',
-                            style: TextStyle(fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 40),
-          Row(
-            spacing: 12,
-            children: [
-              SizedBox(
-                width: 100,
-                child: Text('单选/多选', style: _leadingStyle),
+      body: Adaptive.isIOS(context)
+          ? _buildIos(theme, padding)
+          : ListView(
+              padding: EdgeInsets.only(
+                left: padding.left + 16,
+                right: padding.right + 16,
+                bottom: padding.bottom + 100,
               ),
-              Obx(() {
-                final choiceCnt = _controller.choiceCnt.value;
-                final choices = List.generate(
-                  _controller.options.length,
-                  (i) => i + 1,
-                );
-                return Listener(
-                  onPointerDown: (_) =>
-                      FocusManager.instance.primaryFocus?.unfocus(),
-                  child: PLPopupMenuButton<int>(
-                    initialValue: choiceCnt,
-                    requestFocus: false,
-                    onSelected: _controller.choiceCnt.call,
-                    itemBuilder: (context) {
-                      return choices
-                          .map(
-                            (e) => PopupMenuItem(
-                              value: e,
-                              child: Text(e == 1 ? '单选' : '最多选$e项'),
+              children: [
+                const Text(
+                  '投票类型',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                _buildType(theme),
+                const SizedBox(height: 40),
+                Obx(
+                  () => _buildInput(
+                    theme,
+                    key: ValueKey('${_controller.key}title'),
+                    initialValue: _controller.title.value,
+                    onChanged: (value) => _controller
+                      ..title.value = value
+                      ..updateCanCreate(),
+                    desc: '投票标题',
+                    hintText: '请填写标题',
+                    inputFormatters: [LengthLimitingTextInputFormatter(32)],
+                  ),
+                ),
+                divider,
+                Obx(
+                  () => _buildInput(
+                    theme,
+                    key: ValueKey('${_controller.key}desc'),
+                    initialValue: _controller.desc.value,
+                    onChanged: _controller.desc.call,
+                    desc: '投票说明',
+                    inputFormatters: [LengthLimitingTextInputFormatter(100)],
+                  ),
+                ),
+                divider,
+                const SizedBox(height: 40),
+                Obx(
+                  () {
+                    final showImg = _controller.type.value == 1;
+                    final showDel = _controller.options.length > 2;
+                    List<Widget> children = [];
+                    for (int i = 0; i < _controller.options.length; i++) {
+                      final e = _controller.options[i];
+                      children
+                        ..add(
+                          _buildInput(
+                            theme,
+                            key: ObjectKey(e),
+                            showDel: showDel,
+                            onDel: () {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              _controller.onDel(i);
+                            },
+                            showImg: showImg,
+                            imgUrl: e.imgUrl,
+                            onPickImg: () => EasyThrottle.throttle(
+                              'picImg',
+                              const Duration(milliseconds: 500),
+                              () => _onPickImg(i),
                             ),
-                          )
-                          .toList();
-                    },
-                    child: Text(
-                      choiceCnt == 1 ? '单选         ' : '最多选$choiceCnt项',
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-          const SizedBox(height: 4),
-          divider,
-          Row(
-            spacing: 12,
-            children: [
-              SizedBox(
-                width: 100,
-                child: Text('投票截止时间', style: _leadingStyle),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () async {
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  DateTime? newDate = await showDatePicker(
-                    context: context,
-                    initialDate: _controller.endtime.value,
-                    firstDate: _controller.now,
-                    lastDate: _controller.end,
-                  );
-                  if (newDate != null && context.mounted) {
-                    TimeOfDay? newTime = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.fromDateTime(
-                        _controller.endtime.value,
-                      ),
-                    );
-                    if (newTime != null) {
-                      final newEndtime = DateTime(
-                        newDate.year,
-                        newDate.month,
-                        newDate.day,
-                        newTime.hour,
-                        newTime.minute,
-                      );
-                      if (newEndtime.difference(DateTime.now()) >=
-                          const Duration(minutes: 5)) {
-                        _controller.endtime.value = newEndtime;
-                      } else {
-                        SmartDialog.showToast('至少选择5分钟之后');
-                      }
+                            initialValue: e.optDesc,
+                            onChanged: (value) => _controller
+                              ..options[i].optDesc = value
+                              ..updateCanCreate(),
+                            desc: '选项${i + 1}',
+                            hintText: '选项内容，最多20字',
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(20),
+                            ],
+                          ),
+                        )
+                        ..add(divider);
                     }
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Obx(
-                    () => Text(
-                      DateFormatUtils.longFormatD.format(
-                        _controller.endtime.value,
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...children,
+                        if (_controller.options.length < 20)
+                          FilledButton(
+                            onPressed: () => _controller
+                              ..options.add(Option(optDesc: '', imgUrl: ''))
+                              ..updateCanCreate(),
+                            style: FilledButton.styleFrom(
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.only(
+                                left: 10,
+                                right: 14,
+                                top: 4,
+                                bottom: 4,
+                              ),
+                              visualDensity: .standard,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              foregroundColor:
+                                  theme.colorScheme.onSurfaceVariant,
+                              backgroundColor:
+                                  theme.colorScheme.onInverseSurface,
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.add, size: 16),
+                                Text(
+                                  ' 添加选项',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  spacing: 12,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: Text('单选/多选', style: _leadingStyle),
+                    ),
+                    Obx(() {
+                      final choiceCnt = _controller.choiceCnt.value;
+                      final choices = List.generate(
+                        _controller.options.length,
+                        (i) => i + 1,
+                      );
+                      return Listener(
+                        onPointerDown: (_) =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
+                        child: PLPopupMenuButton<int>(
+                          initialValue: choiceCnt,
+                          requestFocus: false,
+                          onSelected: _controller.choiceCnt.call,
+                          itemBuilder: (context) {
+                            return choices
+                                .map(
+                                  (e) => PopupMenuItem(
+                                    value: e,
+                                    child: Text(e == 1 ? '单选' : '最多选$e项'),
+                                  ),
+                                )
+                                .toList();
+                          },
+                          child: Text(
+                            choiceCnt == 1 ? '单选         ' : '最多选$choiceCnt项',
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                divider,
+                Row(
+                  spacing: 12,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: Text('投票截止时间', style: _leadingStyle),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        DateTime? newDate = await showDatePicker(
+                          context: context,
+                          initialDate: _controller.endtime.value,
+                          firstDate: _controller.now,
+                          lastDate: _controller.end,
+                        );
+                        if (newDate != null && context.mounted) {
+                          TimeOfDay? newTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(
+                              _controller.endtime.value,
+                            ),
+                          );
+                          if (newTime != null) {
+                            final newEndtime = DateTime(
+                              newDate.year,
+                              newDate.month,
+                              newDate.day,
+                              newTime.hour,
+                              newTime.minute,
+                            );
+                            if (newEndtime.difference(DateTime.now()) >=
+                                const Duration(minutes: 5)) {
+                              _controller.endtime.value = newEndtime;
+                            } else {
+                              SmartDialog.showToast('至少选择5分钟之后');
+                            }
+                          }
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Obx(
+                          () => Text(
+                            DateFormatUtils.longFormatD.format(
+                              _controller.endtime.value,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
+                ),
+                divider,
+                const SizedBox(height: 40),
+                Obx(() {
+                  final canCreate = _controller.canCreate.value;
+                  return FilledButton.tonal(
+                    onPressed: canCreate ? _controller.onCreate : null,
+                    child: const Text('发起投票'),
+                  );
+                }),
+              ],
+            ),
+    );
+  }
+
+  /// iOS：分段控件 + 三张 inset 卡片（标题/说明、选项、规则），
+  /// 底部使用品牌粉主按钮。
+  Widget _buildIos(ThemeData theme, EdgeInsets padding) {
+    final divider = Divider(
+      height: 1,
+      color: theme.colorScheme.outline.withValues(alpha: 0.12),
+    );
+    return ListView(
+      padding: EdgeInsets.only(
+        left: padding.left + 16,
+        right: padding.right + 16,
+        bottom: padding.bottom + 100,
+      ),
+      children: [
+        const Text('投票类型', style: TextStyle(fontSize: 14)),
+        const SizedBox(height: 10),
+        _buildType(theme),
+        const SizedBox(height: 20),
+        PLCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Column(
+            children: [
+              Obx(
+                () => _buildInput(
+                  theme,
+                  key: ValueKey('${_controller.key}title'),
+                  initialValue: _controller.title.value,
+                  onChanged: (value) => _controller
+                    ..title.value = value
+                    ..updateCanCreate(),
+                  desc: '投票标题',
+                  hintText: '请填写标题',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(32),
+                  ],
+                ),
+              ),
+              divider,
+              Obx(
+                () => _buildInput(
+                  theme,
+                  key: ValueKey('${_controller.key}desc'),
+                  initialValue: _controller.desc.value,
+                  onChanged: _controller.desc.call,
+                  desc: '投票说明',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(100),
+                  ],
                 ),
               ),
             ],
           ),
-          divider,
-          const SizedBox(height: 40),
-          Obx(() {
-            final canCreate = _controller.canCreate.value;
-            return FilledButton.tonal(
-              onPressed: canCreate ? _controller.onCreate : null,
-              child: const Text('发起投票'),
+        ),
+        const SizedBox(height: 16),
+        PLCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Obx(() {
+            final showImg = _controller.type.value == 1;
+            final showDel = _controller.options.length > 2;
+            return Column(
+              children: [
+                for (var i = 0; i < _controller.options.length; i++) ...[
+                  _buildInput(
+                    theme,
+                    key: ObjectKey(_controller.options[i]),
+                    showDel: showDel,
+                    onDel: () {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      _controller.onDel(i);
+                    },
+                    showImg: showImg,
+                    imgUrl: _controller.options[i].imgUrl,
+                    onPickImg: () => EasyThrottle.throttle(
+                      'picImg',
+                      const Duration(milliseconds: 500),
+                      () => _onPickImg(i),
+                    ),
+                    initialValue: _controller.options[i].optDesc,
+                    onChanged: (value) => _controller
+                      ..options[i].optDesc = value
+                      ..updateCanCreate(),
+                    desc: '选项${i + 1}',
+                    hintText: '选项内容，最多20字',
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(20),
+                    ],
+                  ),
+                  divider,
+                ],
+                if (_controller.options.length < 20)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => _controller
+                        ..options.add(Option(optDesc: '', imgUrl: ''))
+                        ..updateCanCreate(),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('添加选项'),
+                    ),
+                  ),
+              ],
             );
           }),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        PLCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Column(
+            children: [
+              Row(
+                spacing: 12,
+                children: [
+                  SizedBox(
+                    width: 100,
+                    child: Text('单选/多选', style: _leadingStyle),
+                  ),
+                  Obx(() {
+                    final choiceCnt = _controller.choiceCnt.value;
+                    final choices = List.generate(
+                      _controller.options.length,
+                      (i) => i + 1,
+                    );
+                    return Listener(
+                      onPointerDown: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
+                      child: PLPopupMenuButton<int>(
+                        initialValue: choiceCnt,
+                        requestFocus: false,
+                        onSelected: _controller.choiceCnt.call,
+                        itemBuilder: (context) {
+                          return choices
+                              .map(
+                                (e) => PopupMenuItem(
+                                  value: e,
+                                  child: Text(
+                                    e == 1 ? '单选' : '最多选$e项',
+                                  ),
+                                ),
+                              )
+                              .toList();
+                        },
+                        child: Text(
+                          choiceCnt == 1 ? '单选         ' : '最多选$choiceCnt项',
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+              divider,
+              Row(
+                spacing: 12,
+                children: [
+                  SizedBox(
+                    width: 100,
+                    child: Text('投票截止时间', style: _leadingStyle),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () async {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      DateTime? newDate = await showDatePicker(
+                        context: context,
+                        initialDate: _controller.endtime.value,
+                        firstDate: _controller.now,
+                        lastDate: _controller.end,
+                      );
+                      if (newDate != null && mounted) {
+                        TimeOfDay? newTime = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.fromDateTime(
+                            _controller.endtime.value,
+                          ),
+                        );
+                        if (newTime != null) {
+                          final newEndtime = DateTime(
+                            newDate.year,
+                            newDate.month,
+                            newDate.day,
+                            newTime.hour,
+                            newTime.minute,
+                          );
+                          if (newEndtime.difference(DateTime.now()) >=
+                              const Duration(minutes: 5)) {
+                            _controller.endtime.value = newEndtime;
+                          } else {
+                            SmartDialog.showToast('至少选择5分钟之后');
+                          }
+                        }
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Obx(
+                        () => Text(
+                          DateFormatUtils.longFormatD.format(
+                            _controller.endtime.value,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Obx(
+          () => PLPrimaryButton(
+            label: '发起投票',
+            onPressed: _controller.canCreate.value
+                ? _controller.onCreate
+                : null,
+          ),
+        ),
+      ],
     );
   }
 
@@ -295,7 +527,8 @@ class _CreateVotePageState extends State<CreateVotePage> {
     VoidCallback? onDel,
     VoidCallback? onPickImg,
   }) {
-    return Row(
+    final isIOS = Adaptive.isIOS(context);
+    final row = Row(
       spacing: 12,
       children: [
         SizedBox(
@@ -310,16 +543,20 @@ class _CreateVotePageState extends State<CreateVotePage> {
             key: key,
             initialValue: initialValue,
             onChanged: onChanged,
-            decoration: InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-              hintText: hintText ?? desc,
-              hintStyle: TextStyle(
-                fontSize: 15,
-                color: theme.colorScheme.outline.withValues(alpha: 0.7),
-              ),
-            ),
+            // iOS 用灰底 / 10pt 圆角 / 无边框的输入框规格；
+            // Material 保持原来的透明无边框，不受 iOS 逻辑影响。
+            decoration: isIOS
+                ? plInputDecoration(context, hintText: hintText ?? desc)
+                : InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    hintText: hintText ?? desc,
+                    hintStyle: TextStyle(
+                      fontSize: 15,
+                      color: theme.colorScheme.outline.withValues(alpha: 0.7),
+                    ),
+                  ),
             inputFormatters: inputFormatters,
           ),
         ),
@@ -346,10 +583,30 @@ class _CreateVotePageState extends State<CreateVotePage> {
           ),
       ],
     );
+    if (!isIOS) {
+      return row;
+    }
+    // 灰底输入框本身约 40–44pt，这里再保底到 44pt，
+    // 避免 Material 默认字号的差异让行高塌回 20pt 左右。
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: row,
+    );
   }
 
   Widget _buildType(ThemeData theme) => Obx(
     () {
+      if (Adaptive.isIOS(context)) {
+        return PLSegmentedTabs<int>(
+          values: const [0, 1],
+          labelOf: (value) => '${const ['文字', '图片'][value]}投票',
+          groupValue: _controller.type.value,
+          onValueChanged: (value) => _controller
+            ..type.value = value
+            ..updateCanCreate(),
+          fontSize: 14,
+        );
+      }
       return Row(
         spacing: 16,
         children: List.generate(

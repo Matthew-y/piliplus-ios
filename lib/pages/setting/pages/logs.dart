@@ -2,6 +2,8 @@ import 'dart:async' show Timer;
 import 'dart:convert' show jsonDecode;
 
 import 'package:PiliPlus/common/constants.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_form.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
@@ -161,8 +163,8 @@ class _LogsPageState extends State<LogsPage> {
       body: logsContent.isNotEmpty || _deviceInfo != null
           ? Padding(
               padding: EdgeInsets.only(
-                left: padding.left + 12,
-                right: padding.right + 12,
+                left: padding.left + (Adaptive.isIOS(context) ? 16 : 12),
+                right: padding.right + (Adaptive.isIOS(context) ? 16 : 12),
               ),
               child: CustomScrollView(
                 slivers: [
@@ -221,6 +223,7 @@ class _InfoCard extends StatelessWidget {
         ),
         ...map.entries.map(
           (entry) => Text.rich(
+            style: const TextStyle(height: 1.45),
             TextSpan(
               children: [
                 TextSpan(
@@ -241,7 +244,7 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
-    return _card([
+    return _card(context, [
       Row(
         children: [
           Icon(
@@ -280,7 +283,7 @@ class _InfoCard extends StatelessWidget {
                 ),
               );
             },
-            icon: const Icon(Icons.copy_outlined, size: 16),
+            icon: const Icon(Icons.copy_all_outlined, size: 16),
           ),
           iconButton(
             size: 34,
@@ -318,7 +321,7 @@ class _ReportCard extends StatelessWidget {
       -1,
     );
     final dateTime = DateFormatUtils.longFormatDs.format(report.item.dateTime);
-    return _card([
+    return _card(context, [
       Row(
         crossAxisAlignment: .start,
         children: [
@@ -329,7 +332,11 @@ class _ReportCard extends StatelessWidget {
               children: [
                 Text(
                   report.item.error.toString(),
-                  style: const TextStyle(fontWeight: .bold, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: .bold,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
                   maxLines: 2,
                   overflow: .ellipsis,
                 ),
@@ -357,7 +364,7 @@ class _ReportCard extends StatelessWidget {
                 ),
               );
             },
-            icon: const Icon(Icons.copy_outlined, size: 16),
+            icon: const Icon(Icons.copy_all_outlined, size: 16),
           ),
           iconButton(
             size: 34,
@@ -443,15 +450,22 @@ class _ReportCard extends StatelessWidget {
   }
 }
 
-Widget _card(List<Widget> contents) {
-  return Card(
-    child: Padding(
-      padding: const .all(12),
-      child: Column(
-        crossAxisAlignment: .stretch,
-        children: contents,
-      ),
-    ),
+Widget _card(BuildContext context, List<Widget> contents) {
+  final child = Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: contents,
+  );
+  // Material 保持改动前的 `Card()`（默认 margin all(4)）+ `Padding(all(12))`。
+  if (!Adaptive.isIOS(context)) {
+    return Card(
+      child: Padding(padding: const EdgeInsets.all(12), child: child),
+    );
+  }
+  // iOS 才用 12pt 圆角白卡 + 12/14 间距规格。
+  return PLCard(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(14),
+    child: child,
   );
 }
 

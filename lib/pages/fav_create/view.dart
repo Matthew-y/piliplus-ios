@@ -1,5 +1,10 @@
 import 'dart:io' show File;
 
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_form.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_section.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_switch.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
@@ -222,177 +227,207 @@ class _CreateFavPageState extends State<CreateFavPage> {
     }
   }
 
-  Widget _buildBody() => ViewInsetsSafeArea(
-    child: SingleChildScrollView(
-      padding: .only(bottom: MediaQuery.viewPaddingOf(context).bottom + 25),
-      child: Column(
-        spacing: 12,
-        children: [
-          if (_attr == null || !BiliUtils.isDefaultFav(_attr!))
-            Builder(
-              builder: (context) {
-                return ListTile(
-                  visualDensity: .standard,
-                  tileColor: theme.colorScheme.onInverseSurface,
-                  onTap: () {
-                    EasyThrottle.throttle(
-                      'imagePicker',
-                      const Duration(milliseconds: 500),
-                      () => _onEditCover(context),
-                    );
-                  },
-                  leading: Text('封面', style: leadingStyle),
-                  trailing: Row(
-                    spacing: 10,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_cover?.isNotEmpty == true)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5),
-                          child: NetworkImgLayer(
-                            src: _cover,
-                            height: 55,
-                            width: 88,
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(6),
-                            ),
-                          ),
-                        ),
-                      Icon(
-                        Icons.keyboard_arrow_right,
-                        color: theme.colorScheme.outline,
-                      ),
-                    ],
-                  ),
-                );
-              },
+  Widget _buildBody() {
+    final rows = <Widget>[
+      if (_attr == null || !BiliUtils.isDefaultFav(_attr!)) _coverRow(),
+      _nameRow(),
+      if (_attr == null || !BiliUtils.isDefaultFav(_attr!)) _introRow(),
+    ];
+    final publicRow = _publicRow();
+    if (Adaptive.isIOS(context)) {
+      return ViewInsetsSafeArea(
+        child: ListView(
+          padding: EdgeInsets.only(
+            top: 8,
+            bottom: MediaQuery.viewPaddingOf(context).bottom + 25,
+          ),
+          children: [
+            PLListSection(children: rows),
+            // 组与组之间要有留白：PLListSection 的 margin 只给左右 16，
+            // 上下为 0，直接相邻会让「公开」卡片的圆角顶在前一张卡片底边上，
+            // 形成左右两个内凹缺口。
+            const SizedBox(height: 10),
+            PLListSection(children: [publicRow]),
+          ],
+        ),
+      );
+    }
+    return ViewInsetsSafeArea(
+      child: SingleChildScrollView(
+        padding: .only(
+          bottom: MediaQuery.viewPaddingOf(context).bottom + 25,
+        ),
+        child: Column(
+          spacing: 12,
+          children: [...rows, publicRow],
+        ),
+      ),
+    );
+  }
+
+  Widget _coverRow() {
+    final coverTrailing = Row(
+      spacing: 10,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_cover?.isNotEmpty == true)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: NetworkImgLayer(
+              src: _cover,
+              height: 55,
+              width: 88,
+              borderRadius: const BorderRadius.all(Radius.circular(6)),
             ),
-          ListTile(
-            tileColor: theme.colorScheme.onInverseSurface,
-            title: Row(
+          ),
+        Icon(
+          Icons.keyboard_arrow_right,
+          color: theme.colorScheme.outline,
+        ),
+      ],
+    );
+
+    return PLListTile(
+      visualDensity: .standard,
+      tileColor: theme.colorScheme.onInverseSurface,
+      onTap: () {
+        EasyThrottle.throttle(
+          'imagePicker',
+          const Duration(milliseconds: 500),
+          () => _onEditCover(context),
+        );
+      },
+      // Material 下标签留在 leading 槽位（改动前的布局）；
+      // iOS 的 PLListTile 会把 leading 变成彩色图标，因此标签随内容进 title。
+      leading: Adaptive.isIOS(context) ? null : Text('封面', style: leadingStyle),
+      title: Adaptive.isIOS(context)
+          ? Row(
+              spacing: 10,
               children: [
-                SizedBox(
-                  width: 55,
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '*',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                        const TextSpan(
-                          text: '名称',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
+                Text('封面', style: leadingStyle),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: coverTrailing,
                   ),
                 ),
-                Expanded(
-                  child: TextField(
-                    autofocus: true,
-                    readOnly: _attr != null && BiliUtils.isDefaultFav(_attr!),
-                    controller: _titleController,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: _attr != null && BiliUtils.isDefaultFav(_attr!)
-                          ? theme.colorScheme.outline
-                          : null,
-                    ),
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(20),
-                    ],
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: '名称',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: theme.colorScheme.outline,
-                      ),
-                      border: const OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                        gapPadding: 0,
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
+              ],
+            )
+          : null,
+      trailing: Adaptive.isIOS(context) ? null : coverTrailing,
+    );
+  }
+
+  Widget _nameRow() => PLListTile(
+    tileColor: theme.colorScheme.onInverseSurface,
+    title: Row(
+      children: [
+        SizedBox(
+          width: 55,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '*',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.colorScheme.error,
                   ),
+                ),
+                const TextSpan(
+                  text: '名称',
+                  style: TextStyle(fontSize: 14),
                 ),
               ],
             ),
           ),
-          if (_attr == null || !BiliUtils.isDefaultFav(_attr!))
-            ListTile(
-              tileColor: theme.colorScheme.onInverseSurface,
-              title: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 55,
-                    child: Text(
-                      '简介',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      minLines: 6,
-                      maxLines: 6,
-                      controller: _introController,
-                      style: const TextStyle(fontSize: 14),
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(200),
-                      ],
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: '可填写简介',
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: theme.colorScheme.outline,
-                        ),
-                        border: const OutlineInputBorder(
-                          borderSide: BorderSide.none,
-                          gapPadding: 0,
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        ),
+        Expanded(
+          child: TextField(
+            autofocus: true,
+            readOnly: _attr != null && BiliUtils.isDefaultFav(_attr!),
+            controller: _titleController,
+            style: TextStyle(
+              fontSize: 14,
+              color: _attr != null && BiliUtils.isDefaultFav(_attr!)
+                  ? theme.colorScheme.outline
+                  : null,
             ),
-          Builder(
-            builder: (context) {
-              void onTap() {
-                _isPublic = !_isPublic;
-                (context as Element).markNeedsBuild();
-              }
-
-              return ListTile(
-                onTap: onTap,
-                tileColor: theme.colorScheme.onInverseSurface,
-                leading: Text(
-                  '公开',
-                  style: leadingStyle,
-                ),
-                trailing: Transform.scale(
-                  alignment: Alignment.centerRight,
-                  scale: 0.8,
-                  child: Switch(
-                    value: _isPublic,
-                    onChanged: (value) => onTap(),
+            inputFormatters: [LengthLimitingTextInputFormatter(20)],
+            decoration: Adaptive.isIOS(context)
+                ? plInputDecoration(context, hintText: '名称')
+                : InputDecoration(
+                    isDense: true,
+                    hintText: '名称',
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: theme.colorScheme.outline,
+                    ),
+                    border: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      gapPadding: 0,
+                    ),
+                    contentPadding: EdgeInsets.zero,
                   ),
-                ),
-              );
-            },
           ),
-        ],
-      ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _introRow() => PLListTile(
+    tileColor: theme.colorScheme.onInverseSurface,
+    title: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 55,
+          child: Text(
+            '简介',
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(
+          child: TextField(
+            minLines: 6,
+            maxLines: 6,
+            controller: _introController,
+            style: const TextStyle(fontSize: 14),
+            inputFormatters: [LengthLimitingTextInputFormatter(200)],
+            decoration: Adaptive.isIOS(context)
+                ? plInputDecoration(context, hintText: '可填写简介')
+                : InputDecoration(
+                    isDense: true,
+                    hintText: '可填写简介',
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: theme.colorScheme.outline,
+                    ),
+                    border: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      gapPadding: 0,
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _publicRow() => PLListTile(
+    tileColor: theme.colorScheme.onInverseSurface,
+    // Material 下「公开」留在 leading 槽位（改动前的布局）；iOS 进 title。
+    leading: Adaptive.isIOS(context) ? null : Text('公开', style: leadingStyle),
+    title: Adaptive.isIOS(context) ? Text('公开', style: leadingStyle) : null,
+    onTap: () => setState(() => _isPublic = !_isPublic),
+    trailing: PLSwitch(
+      value: _isPublic,
+      onChanged: (value) => setState(() => _isPublic = value),
+      materialScale: 0.8,
     ),
   );
 }

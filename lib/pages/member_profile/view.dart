@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:io' show File;
 
 import 'package:PiliPlus/common/constants.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_form.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_section.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -132,112 +136,216 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     return switch (_loadingState) {
       Loading() => m3eLoading,
-      Success(:final response) => ListView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewPaddingOf(context).bottom + 25,
-        ),
-        children: [
-          divider1,
-          _item(
-            title: '头像',
-            widget: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5),
-              child: NetworkImgLayer(
-                width: 55,
-                height: 55,
-                type: .avatar,
-                src: response.face,
+      Success(:final response) =>
+        Adaptive.isIOS(context)
+            ? _buildIosProfile(response)
+            : ListView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 25,
+                ),
+                children: [
+                  divider1,
+                  _item(
+                    title: '头像',
+                    widget: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      child: NetworkImgLayer(
+                        width: 55,
+                        height: 55,
+                        type: .avatar,
+                        src: response.face,
+                      ),
+                    ),
+                    onTap: () => EasyThrottle.throttle(
+                      'imagePicker',
+                      const Duration(milliseconds: 500),
+                      _pickImg,
+                    ),
+                  ),
+                  divider,
+                  _item(
+                    title: '昵称',
+                    text: response.name,
+                    onTap: () {
+                      if (response.coins! < 6) {
+                        SmartDialog.showToast('硬币不足');
+                      } else {
+                        _editDialog(
+                          type: ProfileType.uname,
+                          title: '昵称',
+                          text: response.name!,
+                        );
+                      }
+                    },
+                  ),
+                  divider,
+                  _item(
+                    title: '性别',
+                    text: _sex(response.sex!),
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (context_) => _sexDialog(response.sex!),
+                    ),
+                  ),
+                  divider,
+                  _item(
+                    title: '出生年月',
+                    text: response.birthday,
+                    onTap: () =>
+                        showDatePicker(
+                          context: context,
+                          initialDate: DateTime.parse(response.birthday!),
+                          firstDate: DateTime(0001, 1, 1),
+                          lastDate: DateTime.now(),
+                        ).then((res) {
+                          if (res != null) {
+                            _update(
+                              type: ProfileType.birthday,
+                              datum: DateFormatUtils.longFormat.format(res),
+                            );
+                          }
+                        }),
+                  ),
+                  divider,
+                  _item(
+                    title: '个性签名',
+                    text: response.sign,
+                    onTap: () => _editDialog(
+                      type: ProfileType.sign,
+                      title: '个性签名',
+                      text: response.sign ?? '',
+                    ),
+                  ),
+                  divider1,
+                  _item(
+                    title: '头像挂件',
+                    onTap: () => PageUtils.inAppWebview(
+                      'https://www.bilibili.com/h5/mall/pendant/home',
+                    ),
+                  ),
+                  divider1,
+                  _item(
+                    title: 'UID',
+                    needIcon: false,
+                    text: response.mid.toString(),
+                    onTap: () => Utils.copyText(response.mid.toString()),
+                  ),
+                  divider1,
+                  _item(
+                    title: '哔哩哔哩认证',
+                    onTap: () => PageUtils.inAppWebview(
+                      'https://account.bilibili.com/official/mobile/home',
+                    ),
+                  ),
+                  divider1,
+                ],
               ),
-            ),
-            onTap: () => EasyThrottle.throttle(
-              'imagePicker',
-              const Duration(milliseconds: 500),
-              _pickImg,
-            ),
-          ),
-          divider,
-          _item(
-            title: '昵称',
-            text: response.name,
-            onTap: () {
-              if (response.coins! < 6) {
-                SmartDialog.showToast('硬币不足');
-              } else {
-                _editDialog(
-                  type: ProfileType.uname,
-                  title: '昵称',
-                  text: response.name!,
-                );
-              }
-            },
-          ),
-          divider,
-          _item(
-            title: '性别',
-            text: _sex(response.sex!),
-            onTap: () => showDialog(
-              context: context,
-              builder: (context_) => _sexDialog(response.sex!),
-            ),
-          ),
-          divider,
-          _item(
-            title: '出生年月',
-            text: response.birthday,
-            onTap: () =>
-                showDatePicker(
-                  context: context,
-                  initialDate: DateTime.parse(response.birthday!),
-                  firstDate: DateTime(0001, 1, 1),
-                  lastDate: DateTime.now(),
-                ).then((res) {
-                  if (res != null) {
-                    _update(
-                      type: ProfileType.birthday,
-                      datum: DateFormatUtils.longFormat.format(res),
-                    );
-                  }
-                }),
-          ),
-          divider,
-          _item(
-            title: '个性签名',
-            text: response.sign,
-            onTap: () => _editDialog(
-              type: ProfileType.sign,
-              title: '个性签名',
-              text: response.sign ?? '',
-            ),
-          ),
-          divider1,
-          _item(
-            title: '头像挂件',
-            onTap: () => PageUtils.inAppWebview(
-              'https://www.bilibili.com/h5/mall/pendant/home',
-            ),
-          ),
-          divider1,
-          _item(
-            title: 'UID',
-            needIcon: false,
-            text: response.mid.toString(),
-            onTap: () => Utils.copyText(response.mid.toString()),
-          ),
-          divider1,
-          _item(
-            title: '哔哩哔哩认证',
-            onTap: () => PageUtils.inAppWebview(
-              'https://account.bilibili.com/official/mobile/home',
-            ),
-          ),
-          divider1,
-        ],
-      ),
       Error(:final errMsg) => scrollErrorWidget(
         errMsg: errMsg,
         onReload: _getInfo,
       ),
     };
+  }
+
+  /// iOS：inset-grouped 分组，替代平铺 + 16px 粗分隔。
+  Widget _buildIosProfile(AccountMyInfoData response) {
+    return ListView(
+      padding: EdgeInsets.only(
+        top: 8,
+        bottom: MediaQuery.viewPaddingOf(context).bottom + 25,
+      ),
+      children: [
+        PLListSection(
+          children: [
+            _item(
+              title: '头像',
+              widget: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: NetworkImgLayer(
+                  width: 55,
+                  height: 55,
+                  type: .avatar,
+                  src: response.face,
+                ),
+              ),
+              onTap: () => EasyThrottle.throttle(
+                'imagePicker',
+                const Duration(milliseconds: 500),
+                _pickImg,
+              ),
+            ),
+            _item(
+              title: '昵称',
+              text: response.name,
+              onTap: () {
+                if (response.coins! < 6) {
+                  SmartDialog.showToast('硬币不足');
+                } else {
+                  _editDialog(
+                    type: ProfileType.uname,
+                    title: '昵称',
+                    text: response.name!,
+                  );
+                }
+              },
+            ),
+            _item(
+              title: '性别',
+              text: _sex(response.sex!),
+              onTap: () => showDialog(
+                context: context,
+                builder: (context_) => _sexDialog(response.sex!),
+              ),
+            ),
+            _item(
+              title: '出生年月',
+              text: response.birthday,
+              onTap: () =>
+                  showDatePicker(
+                    context: context,
+                    initialDate: DateTime.parse(response.birthday!),
+                    firstDate: DateTime(0001, 1, 1),
+                    lastDate: DateTime.now(),
+                  ).then((res) {
+                    if (res != null) {
+                      _update(
+                        type: ProfileType.birthday,
+                        datum: DateFormatUtils.longFormat.format(res),
+                      );
+                    }
+                  }),
+            ),
+            _item(
+              title: '个性签名',
+              text: response.sign,
+              onTap: () => _editDialog(
+                type: ProfileType.sign,
+                title: '个性签名',
+                text: response.sign ?? '',
+              ),
+            ),
+            _item(
+              title: '头像挂件',
+              onTap: () => PageUtils.inAppWebview(
+                'https://www.bilibili.com/h5/mall/pendant/home',
+              ),
+            ),
+            _item(
+              title: 'UID',
+              needIcon: false,
+              text: response.mid.toString(),
+              onTap: () => Utils.copyText(response.mid.toString()),
+            ),
+            _item(
+              title: '哔哩哔哩认证',
+              onTap: () => PageUtils.inAppWebview(
+                'https://account.bilibili.com/official/mobile/home',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _sexDialog(int current) {
@@ -302,13 +410,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 type == ProfileType.uname ? 16 : 70,
               ),
             ],
-            decoration: InputDecoration(
-              hintText: text,
-              hintStyle: TextStyle(
-                fontSize: 14,
-                color: theme.colorScheme.outline,
-              ),
-            ),
+            decoration: Adaptive.isIOS(context)
+                ? plInputDecoration(context, hintText: text)
+                : InputDecoration(
+                    hintText: text,
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
           ),
           actions: [
             TextButton(
@@ -423,6 +533,54 @@ class _EditProfilePageState extends State<EditProfilePage> {
     GestureTapCallback? onTap,
     bool needIcon = true,
   }) {
+    final trailing = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (text != null)
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          )
+        else
+          ?widget,
+        if (needIcon)
+          Icon(
+            Icons.keyboard_arrow_right,
+            color: theme.colorScheme.outline,
+          )
+        else
+          const SizedBox(width: 24),
+      ],
+    );
+    if (Adaptive.isIOS(context)) {
+      return PLListTile(
+        onTap: onTap,
+        title: Row(
+          children: [
+            SizedBox(
+              width: 76,
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ),
+            Expanded(child: trailing),
+          ],
+        ),
+      );
+    }
     return ListTile(
       onTap: onTap,
       dense: title != '头像',
@@ -433,33 +591,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           fontWeight: FontWeight.normal,
         ),
       ),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (text != null)
-            Flexible(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
-                  color: theme.colorScheme.outline,
-                ),
-              ),
-            )
-          else
-            ?widget,
-          if (needIcon)
-            Icon(
-              Icons.keyboard_arrow_right,
-              color: theme.colorScheme.outline,
-            )
-          else
-            const SizedBox(width: 24),
-        ],
-      ),
+      title: trailing,
     );
   }
 

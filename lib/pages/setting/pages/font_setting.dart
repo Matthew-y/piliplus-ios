@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/utils/extension/box_ext.dart';
@@ -12,6 +14,7 @@ import 'package:PiliPlus/utils/font_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoSlider;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -316,18 +319,32 @@ class _FontSettingPageState extends State<FontSettingPage> {
                           ),
                         ),
                         Expanded(
-                          child: Slider(
-                            padding: .zero,
-                            value: _selectedWeight.toDouble(),
-                            min: 0,
-                            max: 8,
-                            divisions: 8,
-                            secondaryTrackValue: _normalFontWeight.toDouble(),
-                            label: 'w${(_selectedWeight + 1) * 100}',
-                            onChanged: (value) {
-                              setState(() => _selectedWeight = value.toInt());
-                            },
-                          ),
+                          child: Adaptive.isIOS(context)
+                              ? CupertinoSlider(
+                                  value: _selectedWeight.toDouble(),
+                                  min: 0,
+                                  max: 8,
+                                  divisions: 8,
+                                  activeColor: IosColors.brandPink,
+                                  onChanged: (value) => setState(
+                                    () => _selectedWeight = value.toInt(),
+                                  ),
+                                )
+                              : Slider(
+                                  padding: .zero,
+                                  value: _selectedWeight.toDouble(),
+                                  min: 0,
+                                  max: 8,
+                                  divisions: 8,
+                                  secondaryTrackValue: _normalFontWeight
+                                      .toDouble(),
+                                  label: 'w${(_selectedWeight + 1) * 100}',
+                                  onChanged: (value) {
+                                    setState(
+                                      () => _selectedWeight = value.toInt(),
+                                    );
+                                  },
+                                ),
                         ),
                         const SizedBox(
                           width: 50,
@@ -351,20 +368,31 @@ class _FontSettingPageState extends State<FontSettingPage> {
                           child: Text('小', style: TextStyle(fontSize: 11.9)),
                         ),
                         Expanded(
-                          child: Slider(
-                            padding: .zero,
-                            value: _selectedScale,
-                            min: 0.85,
-                            max: 1.6,
-                            divisions: 15,
-                            secondaryTrackValue: 1,
-                            label: _selectedScale == 1.0
-                                ? '默认'
-                                : _selectedScale.toStringAsFixed(2),
-                            onChanged: (value) => setState(
-                              () => _selectedScale = value.toPrecision(2),
-                            ),
-                          ),
+                          child: Adaptive.isIOS(context)
+                              ? CupertinoSlider(
+                                  value: _selectedScale,
+                                  min: 0.85,
+                                  max: 1.6,
+                                  divisions: 15,
+                                  activeColor: IosColors.brandPink,
+                                  onChanged: (value) => setState(
+                                    () => _selectedScale = value.toPrecision(2),
+                                  ),
+                                )
+                              : Slider(
+                                  padding: .zero,
+                                  value: _selectedScale,
+                                  min: 0.85,
+                                  max: 1.6,
+                                  divisions: 15,
+                                  secondaryTrackValue: 1,
+                                  label: _selectedScale == 1.0
+                                      ? '默认'
+                                      : _selectedScale.toStringAsFixed(2),
+                                  onChanged: (value) => setState(
+                                    () => _selectedScale = value.toPrecision(2),
+                                  ),
+                                ),
                         ),
                         const SizedBox(
                           width: 50,
@@ -386,6 +414,17 @@ class _FontSettingPageState extends State<FontSettingPage> {
   }
 
   Widget _buildItem(Widget child) {
+    if (Adaptive.isIOS(context)) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: IosColors.gray5(colorScheme.brightness),
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+        ),
+        child: child,
+      );
+    }
     return Container(
       padding: const .symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(

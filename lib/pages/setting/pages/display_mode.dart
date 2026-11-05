@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_section.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_list_tile.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -60,49 +63,89 @@ class _SetDisplayModeState extends State<SetDisplayMode> {
     });
   }
 
+  void _select(DisplayMode mode) {
+    FlutterDisplayMode.setPreferredMode(
+      mode,
+    ).whenComplete(() => Timer(const Duration(milliseconds: 100), fetchAll));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(title: const Text('屏幕帧率设置')),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding:
-                MediaQuery.viewPaddingOf(context).copyWith(top: 0, bottom: 0) +
-                const EdgeInsets.only(left: 25, top: 10, bottom: 5),
-            child: Text(
-              '没有生效？重启app试试',
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          Expanded(
-            child: RadioGroup(
-              onChanged: (newMode) {
-                FlutterDisplayMode.setPreferredMode(newMode!).whenComplete(
-                  () => Timer(const Duration(milliseconds: 100), fetchAll),
-                );
-              },
-              groupValue: preferred,
-              child: ListView.builder(
-                itemCount: modes.length,
-                padding: .only(
-                  bottom: MediaQuery.viewPaddingOf(context).bottom,
+      body: Adaptive.isIOS(context)
+          ? _buildIos(theme)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding:
+                      MediaQuery.viewPaddingOf(
+                        context,
+                      ).copyWith(top: 0, bottom: 0) +
+                      const EdgeInsets.only(left: 25, top: 10, bottom: 5),
+                  child: Text(
+                    '没有生效？重启app试试',
+                    style: TextStyle(color: theme.colorScheme.outline),
+                  ),
                 ),
-                itemBuilder: (context, index) {
-                  final DisplayMode mode = modes[index];
-                  return RadioListTile<DisplayMode>(
-                    value: mode,
-                    title: mode == DisplayMode.auto
-                        ? const Text('自动')
-                        : Text('$mode${mode == active ? '  [系统]' : ''}'),
-                  );
-                },
-              ),
+                Expanded(
+                  child: RadioGroup(
+                    onChanged: (newMode) => _select(newMode!),
+                    groupValue: preferred,
+                    child: ListView.builder(
+                      itemCount: modes.length,
+                      padding: .only(
+                        bottom: MediaQuery.viewPaddingOf(context).bottom,
+                      ),
+                      itemBuilder: (context, index) {
+                        final DisplayMode mode = modes[index];
+                        return RadioListTile<DisplayMode>(
+                          value: mode,
+                          title: mode == DisplayMode.auto
+                              ? const Text('自动')
+                              : Text(
+                                  '$mode${mode == active ? '  [系统]' : ''}',
+                                ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+    );
+  }
+
+  Widget _buildIos(ThemeData theme) {
+    final padding = MediaQuery.viewPaddingOf(context);
+    return ListView(
+      padding: EdgeInsets.only(top: 8, bottom: padding.bottom + 40),
+      children: [
+        PLListSection(
+          header: const Text('屏幕刷新率'),
+          footer: const Text('没有生效时，重启 App 再试一次。'),
+          children: [
+            for (final mode in modes)
+              PLListTile(
+                title: Text(
+                  mode == DisplayMode.auto
+                      ? '自动'
+                      : '$mode${mode == active ? '  [系统]' : ''}',
+                ),
+                trailing: mode == preferred
+                    ? Icon(
+                        Icons.check,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      )
+                    : null,
+                onTap: () => _select(mode),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
