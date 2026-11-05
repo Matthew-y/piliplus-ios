@@ -1,4 +1,6 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
@@ -31,9 +33,20 @@ class HistoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isIOS = Adaptive.isIOS(context);
+    final secondaryColor = isIOS
+        ? IosColors.secondaryLabel(theme.brightness)
+        : theme.colorScheme.outline;
     final hasDuration = item.hasDuration;
     final business = item.history.business;
     final enableMultiSelect = ctr.enableMultiSelect.value;
+    // iOS 热区 44×44，图标仍是 18。热区底边与卡片下沿齐平，不往下探：
+    // Stack 的 hitTest 以自身 size 为界，超出的部分既不给子节点也不给父节点，
+    // 所以 `bottom` 取负数只会让底部那段变成死区。行高由
+    // `PLGrouped.sliverGridOrList` 给到 115（比 Material 网格的 110 多 5），
+    // 44 的热区才完整落在行内，图标视觉中心也维持在原来的位置。
+    final menuTapSize = isIOS ? 44.0 : 29.0;
+    final menuRight = 12 - (menuTapSize - 29) / 2;
 
     final onLongPress = enableMultiSelect
         ? null
@@ -91,21 +104,21 @@ class HistoryItem extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  content(theme),
+                  content(theme, secondaryColor),
                 ],
               ),
             ),
             Positioned(
-              right: 12,
+              right: menuRight,
               bottom: 0,
-              width: 29,
-              height: 29,
+              width: menuTapSize,
+              height: menuTapSize,
               child: PLPopupMenuButton(
                 padding: EdgeInsets.zero,
                 tooltip: '功能菜单',
                 icon: Icon(
                   Icons.more_vert_outlined,
-                  color: theme.colorScheme.outline,
+                  color: secondaryColor,
                   size: 18,
                 ),
                 position: PopupMenuPosition.under,
@@ -166,7 +179,7 @@ class HistoryItem extends StatelessWidget {
     );
   }
 
-  Widget content(ThemeData theme) {
+  Widget content(ThemeData theme, Color secondaryColor) {
     return Expanded(
       child: Column(
         spacing: 2,
@@ -188,7 +201,7 @@ class HistoryItem extends StatelessWidget {
               item.showTitle!,
               style: TextStyle(
                 fontSize: 13,
-                color: theme.colorScheme.outline,
+                color: secondaryColor,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -201,14 +214,14 @@ class HistoryItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: theme.textTheme.labelMedium!.fontSize,
-                color: theme.colorScheme.outline,
+                color: secondaryColor,
               ),
             ),
           Text(
             DateFormatUtils.chatFormat(item.viewAt!, isHistory: true),
             style: TextStyle(
               fontSize: theme.textTheme.labelMedium!.fontSize,
-              color: theme.colorScheme.outline,
+              color: secondaryColor,
             ),
           ),
         ],

@@ -2,6 +2,9 @@ import 'dart:math';
 
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_grouped_card.dart';
 import 'package:PiliPlus/common/widgets/button/more_btn.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -122,14 +125,18 @@ class _FollowChildPageState extends State<FollowChildPage>
                     _followController.onLoadMore();
                   }
                   final item = response[index];
-                  return FollowItem(
-                    item: item,
-                    isOwner: widget.controller?.isOwner,
-                    onSelect: widget.onSelect,
-                    afterMod: (attr) {
-                      item.attribute = attr == 0 ? -1 : 0;
-                      _followController.loadingState.refresh();
-                    },
+                  return _groupedItem(
+                    index: index,
+                    count: response.length,
+                    child: FollowItem(
+                      item: item,
+                      isOwner: widget.controller?.isOwner,
+                      onSelect: widget.onSelect,
+                      afterMod: (attr) {
+                        item.attribute = attr == 0 ? -1 : 0;
+                        _followController.loadingState.refresh();
+                      },
+                    ),
                   );
                 },
               )
@@ -141,10 +148,38 @@ class _FollowChildPageState extends State<FollowChildPage>
     };
   }
 
+  /// iOS：把关注行放进 16pt 留白的分组卡片里（首项上圆角、末项下圆角）。
+  ///
+  /// Material 皮肤下 [PLGroupedRow] 原样返回 [child]，行高与缩进不变。
+  Widget _groupedItem({
+    required int index,
+    required int count,
+    required Widget child,
+  }) {
+    return PLGroupedRow(
+      isFirst: index == 0,
+      isLast: index == count - 1,
+      // 16 外边距 + 45 头像 + 10 间距，让 hairline 和昵称左边缘对齐。
+      dividerIndent: 71,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: child,
+    );
+  }
+
   Widget _buildSameFollowing(
     ColorScheme colorScheme,
     LoadingState<List<FollowItemModel>?> state,
   ) {
+    final isIOS = Adaptive.isIOS(context);
+    final labelStyle = TextStyle(
+      fontSize: isIOS ? 13 : null,
+      color: isIOS
+          ? IosColors.secondaryLabel(Theme.of(context).brightness)
+          : colorScheme.onSurfaceVariant,
+    );
+    final moreColor = isIOS
+        ? IosColors.secondaryLabel(Theme.of(context).brightness)
+        : colorScheme.outline;
     return switch (state) {
       Success(:final response) =>
         response != null && response.isNotEmpty
@@ -160,18 +195,13 @@ class _FollowChildPageState extends State<FollowChildPage>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '我们的共同关注',
-                            style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+                          Text('我们的共同关注', style: labelStyle),
                           moreTextButton(
                             onTap: () => FollowSamePage.toFollowSamePage(
                               mid: _followController.mid,
                               name: widget.controller?.name.value,
                             ),
-                            color: colorScheme.outline,
+                            color: moreColor,
                           ),
                         ],
                       ),
@@ -179,8 +209,11 @@ class _FollowChildPageState extends State<FollowChildPage>
                   ),
                   SliverList.builder(
                     itemCount: min(3, response.length),
-                    itemBuilder: (_, index) =>
-                        FollowItem(item: response[index]),
+                    itemBuilder: (_, index) => _groupedItem(
+                      index: index,
+                      count: min(3, response.length),
+                      child: FollowItem(item: response[index]),
+                    ),
                   ),
                   SliverToBoxAdapter(
                     child: Padding(
@@ -189,12 +222,7 @@ class _FollowChildPageState extends State<FollowChildPage>
                         top: 16,
                         bottom: 6,
                       ),
-                      child: Text(
-                        '全部关注',
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      child: Text('全部关注', style: labelStyle),
                     ),
                   ),
                 ],

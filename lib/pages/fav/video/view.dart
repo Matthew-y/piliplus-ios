@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_grouped_card.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -33,7 +34,8 @@ class _FavVideoPageState extends State<FavVideoPage>
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(
+            padding: PLGrouped.sliverPadding(
+              context,
               top: 7,
               bottom: 100 + MediaQuery.viewPaddingOf(context).bottom,
             ),
@@ -46,13 +48,17 @@ class _FavVideoPageState extends State<FavVideoPage>
     );
   }
 
-  Widget _buildBody(LoadingState<List<FavFolderInfo>?> loadingState) {
+  Widget _buildBody(
+    LoadingState<List<FavFolderInfo>?> loadingState,
+  ) {
     return switch (loadingState) {
       Loading() => gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+            ? PLGrouped.sliverGridOrList(
+                context: context,
+                materialGridDelegate: gridDelegate,
+                itemCount: response.length,
                 itemBuilder: (BuildContext context, int index) {
                   if (index == response.length - 1) {
                     _favController.onLoadMore();
@@ -79,7 +85,6 @@ class _FavVideoPageState extends State<FavVideoPage>
                     },
                   );
                 },
-                itemCount: response.length,
               )
             : HttpError(onReload: _favController.onReload),
       Error(:final errMsg) => HttpError(

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_grouped_card.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -34,7 +35,8 @@ class _FavCheesePageState extends State<FavCheesePage>
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(
+            padding: PLGrouped.sliverPadding(
+              context,
               top: 7,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
@@ -55,8 +57,10 @@ class _FavCheesePageState extends State<FavCheesePage>
       Loading() => gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+            ? PLGrouped.sliverGridOrList(
+                context: context,
+                materialGridDelegate: gridDelegate,
+                itemCount: response.length,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
                     _controller.onLoadMore();
@@ -72,7 +76,6 @@ class _FavCheesePageState extends State<FavCheesePage>
                     ),
                   );
                 },
-                itemCount: response.length,
               )
             : HttpError(onReload: _controller.onReload),
       Error(:final errMsg) => HttpError(

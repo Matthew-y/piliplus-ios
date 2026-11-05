@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_grouped_card.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -46,7 +47,11 @@ class _FavNoteChildPageState extends State<FavNoteChildPage>
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: EdgeInsets.only(bottom: padding.bottom + 100),
+              padding: PLGrouped.sliverPadding(
+                context,
+                top: 0,
+                bottom: padding.bottom + 100,
+              ),
               sliver: Obx(
                 () => _buildBody(_favNoteController.loadingState.value),
               ),
@@ -139,8 +144,10 @@ class _FavNoteChildPageState extends State<FavNoteChildPage>
       Loading() => gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+            ? PLGrouped.sliverGridOrList(
+                context: context,
+                materialGridDelegate: gridDelegate,
+                itemCount: response.length,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
                     _favNoteController.onLoadMore();
@@ -152,7 +159,6 @@ class _FavNoteChildPageState extends State<FavNoteChildPage>
                     onSelect: () => _favNoteController.onSelect(item),
                   );
                 },
-                itemCount: response.length,
               )
             : HttpError(onReload: _favNoteController.onReload),
       Error(:final errMsg) => HttpError(

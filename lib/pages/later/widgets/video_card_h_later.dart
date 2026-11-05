@@ -1,4 +1,6 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
@@ -92,6 +94,17 @@ class VideoCardHLater extends StatelessWidget {
 
   Widget content(BuildContext context, ThemeData theme) {
     final isPgc = videoItem.isPgc == true && videoItem.bangumi != null;
+    final isIOS = Adaptive.isIOS(context);
+    // iOS 次要文字统一走系统 secondaryLabel。
+    final secondaryColor = isIOS
+        ? IosColors.secondaryLabel(theme.brightness)
+        : theme.colorScheme.outline;
+    // iOS 热区 44×44，图标 18 不变。热区底边对齐内容区底边，不往外探：
+    // Stack 的 hitTest 只认自身 size 内的点，`bottom: -8` 探出去的那几 pt
+    // 点不到。行高由 `PLGrouped.sliverGridOrList` 给到 115（Material 网格是
+    // 110），多出的 5pt 正好抵掉按钮下移的距离，图标视觉位置不变。
+    final btnSize = isIOS ? 44.0 : 36.0;
+    final btnBottom = isIOS ? 0.0 : -8.0;
     Widget stat = StatWidget(
       type: StatType.play,
       value: videoItem.stat?.view,
@@ -120,7 +133,7 @@ class VideoCardHLater extends StatelessWidget {
                       textAlign: TextAlign.start,
                       style: TextStyle(
                         fontSize: 13,
-                        color: theme.colorScheme.outline,
+                        color: secondaryColor,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -147,7 +160,7 @@ class VideoCardHLater extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         height: 1,
-                        color: theme.colorScheme.outline,
+                        color: secondaryColor,
                         overflow: TextOverflow.clip,
                       ),
                     ),
@@ -166,12 +179,14 @@ class VideoCardHLater extends StatelessWidget {
           ),
           Positioned(
             right: 0,
-            bottom: -8,
+            bottom: btnBottom,
             child: iconButton(
               tooltip: '移除',
               onPressed: () => ctr.toViewDel(context, index, videoItem.aid!),
               icon: const Icon(Icons.clear),
-              iconColor: theme.colorScheme.outline,
+              size: btnSize,
+              iconSize: 18,
+              iconColor: secondaryColor,
             ),
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_grouped_card.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -49,7 +50,8 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
         controller: _laterController.scrollController,
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(
+            padding: PLGrouped.sliverPadding(
+              context,
               top: 7,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 85,
             ),
@@ -67,8 +69,10 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
       Loading() => gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+            ? PLGrouped.sliverGridOrList(
+                context: context,
+                materialGridDelegate: gridDelegate,
+                itemCount: response.length,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
                     _laterController.onLoadMore();
@@ -100,7 +104,6 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
                     ),
                   );
                 },
-                itemCount: response.length,
               )
             : HttpError(onReload: _laterController.onReload),
       Error(:final errMsg) => HttpError(

@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
@@ -54,17 +55,24 @@ class MemberCheeseItem extends StatelessWidget {
       ],
     );
     if (onRemove != null) {
+      final isIOS = Adaptive.isIOS(context);
+      // iOS 热区 44×44，图标 18 不变；底边对齐内容区底边，不往外探
+      // （Stack 的 hitTest 只认自身 size 内的点，探出去的点不到）。
+      final btnSize = isIOS ? 44.0 : 36.0;
+      final btnBottom = isIOS ? 0.0 : -8.0;
       child = Stack(
         clipBehavior: Clip.none,
         children: [
           child,
           Positioned(
             right: 0,
-            bottom: -8,
+            bottom: btnBottom,
             child: iconButton(
               tooltip: '移除',
               onPressed: onRemove,
               icon: const Icon(Icons.clear),
+              size: btnSize,
+              iconSize: 18,
               iconColor: theme.colorScheme.outline,
             ),
           ),

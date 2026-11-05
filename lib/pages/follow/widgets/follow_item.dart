@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
 import 'package:PiliPlus/models_new/follow/list.dart';
 import 'package:PiliPlus/pages/share/view.dart' show UserModel;
@@ -22,7 +24,13 @@ class FollowItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final colorScheme = ColorScheme.of(context);
+    final isIOS = Adaptive.isIOS(context);
+    // iOS 次要文字用系统 secondaryLabel，避免 M3 主题派生出的偏粉灰。
+    final secondaryColor = isIOS
+        ? IosColors.secondaryLabel(theme.brightness)
+        : colorScheme.outline;
     Widget? followBtn;
     if (isOwner) {
       final isFollow = item.attribute != -1;
@@ -33,13 +41,24 @@ class FollowItem extends StatelessWidget {
           isFollow: isFollow,
           afterMod: afterMod,
         ),
-        style: FilledButton.styleFrom(
-          visualDensity: .compact,
-          tapTargetSize: .shrinkWrap,
-          padding: const .symmetric(horizontal: 15),
-          foregroundColor: isFollow ? colorScheme.outline : null,
-          backgroundColor: isFollow ? colorScheme.onInverseSurface : null,
-        ),
+        style: isIOS
+            // iOS 命中区 48×48（≥44）：padded 由 ButtonStyleButton 的
+            // _InputPadding 把可点范围补到 48，胶囊本身只有 40 高。
+            // 行高因此是 68 而非 Material 的 65 —— 撑宽的是这 48 的命中区，
+            // 不是 minimumSize（去掉它只把胶囊从 44 收回 40）。
+            ? FilledButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.padded,
+                padding: const .symmetric(horizontal: 15),
+                foregroundColor: isFollow ? colorScheme.outline : null,
+                backgroundColor: isFollow ? colorScheme.onInverseSurface : null,
+              )
+            : FilledButton.styleFrom(
+                visualDensity: .compact,
+                tapTargetSize: .shrinkWrap,
+                padding: const .symmetric(horizontal: 15),
+                foregroundColor: isFollow ? colorScheme.outline : null,
+                backgroundColor: isFollow ? colorScheme.onInverseSurface : null,
+              ),
         child: Text(
           '${isFollow ? '已' : ''}关注',
           style: const TextStyle(fontSize: 12),
@@ -93,7 +112,7 @@ class FollowItem extends StatelessWidget {
                         overflow: .ellipsis,
                         style: TextStyle(
                           fontSize: 13,
-                          color: colorScheme.outline,
+                          color: secondaryColor,
                         ),
                       ),
                   ],

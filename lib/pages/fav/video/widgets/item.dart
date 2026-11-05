@@ -1,4 +1,6 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
@@ -65,7 +67,9 @@ class FavVideoItem extends StatelessWidget {
   Widget content(BuildContext context) {
     final theme = Theme.of(context);
     final fontSize = theme.textTheme.labelMedium!.fontSize;
-    final color = theme.colorScheme.outline;
+    final color = Adaptive.isIOS(context)
+        ? IosColors.secondaryLabel(theme.brightness)
+        : theme.colorScheme.outline;
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,6 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
+import 'package:PiliPlus/common/widgets/adaptive/ios_colors.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/models_new/fav/fav_note/list.dart';
@@ -29,6 +31,10 @@ class FavNoteItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
+    final theme = Theme.of(context);
+    final secondaryColor = Adaptive.isIOS(context)
+        ? IosColors.secondaryLabel(theme.brightness)
+        : colorScheme.outline;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -96,7 +102,7 @@ class FavNoteItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         height: 1,
-                        color: colorScheme.outline,
+                        color: secondaryColor,
                       ),
                     ),
                     const Spacer(),
@@ -106,7 +112,7 @@ class FavNoteItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         height: 1,
-                        color: colorScheme.outline,
+                        color: secondaryColor,
                       ),
                     ),
                   ],

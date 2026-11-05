@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/adaptive/pl_grouped_card.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
@@ -69,7 +70,8 @@ class _HistoryPageState extends State<HistoryPage>
         controller: _historyController.scrollController,
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(
+            padding: PLGrouped.sliverPadding(
+              context,
               top: 7,
               bottom: padding.bottom + 100,
             ),
@@ -210,8 +212,10 @@ class _HistoryPageState extends State<HistoryPage>
       Loading() => gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+            ? PLGrouped.sliverGridOrList(
+                context: context,
+                materialGridDelegate: gridDelegate,
+                itemCount: response.length,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
                     _historyController.onLoadMore();
@@ -224,7 +228,6 @@ class _HistoryPageState extends State<HistoryPage>
                         _historyController.delHistory(item),
                   );
                 },
-                itemCount: response.length,
               )
             : HttpError(onReload: _historyController.onReload),
       Error(:final errMsg) => HttpError(
