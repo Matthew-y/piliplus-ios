@@ -12,10 +12,16 @@ class PLSwitch extends StatelessWidget {
     super.key,
     required this.value,
     required this.onChanged,
+    this.materialScale = 1.0,
   });
 
   final bool value;
   final ValueChanged<bool>? onChanged;
+
+  /// Material 皮肤下的缩放比例，用于还原各页面原本的
+  /// `Transform.scale(scale: 0.8, child: Switch(...))`。
+  /// iOS 的 [CupertinoSwitch] 是系统尺寸，不参与缩放。
+  final double materialScale;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +33,15 @@ class PLSwitch extends StatelessWidget {
         activeTrackColor: IosColors.brandPink,
       );
     }
-    return Switch(value: value, onChanged: onChanged);
+    final switchWidget = Switch(value: value, onChanged: onChanged);
+    if (materialScale == 1.0) {
+      return switchWidget;
+    }
+    return Transform.scale(
+      alignment: Alignment.centerRight,
+      scale: materialScale,
+      child: switchWidget,
+    );
   }
 }
 
