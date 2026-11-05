@@ -1,4 +1,6 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_segmented_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
@@ -15,7 +17,6 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:get/get.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 
 class LaterPage extends StatefulWidget {
@@ -41,6 +42,14 @@ class _LaterPageState extends State<LaterPage>
   final _sortKey = GlobalKey();
   void listener() {
     (_sortKey.currentContext as Element?)?.markNeedsBuild();
+  }
+
+  void _onTabTap(bool enableMultiSelect) {
+    if (!_tabController.indexIsChanging) {
+      currCtr().scrollController.animToTop();
+    } else if (enableMultiSelect) {
+      currCtr(_tabController.previousIndex).handleSelect();
+    }
   }
 
   @override
@@ -114,24 +123,29 @@ class _LaterPageState extends State<LaterPage>
             body: ViewSafeArea(
               child: Column(
                 children: [
-                  TabBar(
-                    // isScrollable: true,
-                    // tabAlignment: TabAlignment.start,
-                    controller: _tabController,
-                    tabs: LaterViewType.values.map((item) {
-                      final count = _baseCtr.counts[item.index];
-                      return Tab(
-                        text: '${item.title}${count != -1 ? '($count)' : ''}',
-                      );
-                    }).toList(),
-                    onTap: (_) {
-                      if (!_tabController.indexIsChanging) {
-                        currCtr().scrollController.animToTop();
-                      } else if (enableMultiSelect) {
-                        currCtr(_tabController.previousIndex).handleSelect();
-                      }
-                    },
-                  ),
+                  if (Adaptive.isIOS(context))
+                    PLSegmentedTabBar(
+                      controller: _tabController,
+                      labels: LaterViewType.values.map((item) {
+                        final count = _baseCtr.counts[item.index];
+                        return item.title + (count != -1 ? '($count)' : '');
+                      }).toList(),
+                      onTap: (index) => _onTabTap(enableMultiSelect),
+                    )
+                  else
+                    TabBar(
+                      // isScrollable: true,
+                      // tabAlignment: TabAlignment.start,
+                      controller: _tabController,
+                      tabs: LaterViewType.values.map((item) {
+                        final count = _baseCtr.counts[item.index];
+                        return Tab(
+                          text:
+                              '${item.title}${count != -1 ? '($count)' : ''}',
+                        );
+                      }).toList(),
+                      onTap: (_) => _onTabTap(enableMultiSelect),
+                    ),
                   Expanded(
                     child: TabBarView(
                       physics: enableMultiSelect
@@ -156,7 +170,6 @@ class _LaterPageState extends State<LaterPage>
 
   PreferredSizeWidget _buildAppbar(bool enableMultiSelect) {
     final theme = Theme.of(context);
-    Color color = theme.colorScheme.secondary;
     final btnStyle = TextButton.styleFrom(visualDensity: .compact);
     final textStyle = TextStyle(color: theme.colorScheme.onSurfaceVariant);
     return MultiSelectAppBarWidget(
@@ -212,99 +225,49 @@ class _LaterPageState extends State<LaterPage>
             },
             icon: const Icon(Icons.search),
           ),
+          // 排序与清空合并成一个「…」菜单：右侧只留 2 个图标，
+          // trailing 由约 186pt 收到约 96pt，标题不再被明显挤偏。
           Builder(
             key: _sortKey,
             builder: (context) {
               final value = currCtr().asc.value;
-              return PLPopupMenuButton(
+              return PLPopupMenuButton<bool>(
                 initialValue: value,
-                tooltip: '排序',
+                tooltip: '更多',
+                icon: const Icon(Icons.more_horiz),
+                borderRadius: const .all(.circular(20)),
                 onSelected: (value) => currCtr()
                   ..asc.value = value
                   ..onReload(),
-                borderRadius: const .all(.circular(20)),
-                child: Padding(
-                  padding: const .symmetric(horizontal: 12, vertical: 6),
-                  child: Text.rich(
-                    style: TextStyle(fontSize: 14, height: 1, color: color),
-                    strutStyle: const StrutStyle(
-                      leading: 0,
-                      height: 1,
-                      fontSize: 14,
-                    ),
-                    TextSpan(
-                      children: [
-                        TextSpan(text: value ? '最早添加' : '最近添加'),
-                        WidgetSpan(
-                          alignment: .middle,
-                          child: Icon(
-                            size: 14,
-                            MdiIcons.unfoldMoreHorizontal,
-                            color: color,
-                          ),
-                        ),
-                      ],
-                      style: TextStyle(color: color),
-                    ),
-                  ),
-                ),
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
+                  CheckedPopupMenuItem(
                     value: false,
-                    child: Text('最近添加'),
+                    checked: !value,
+                    child: const Text('最近添加'),
                   ),
-                  const PopupMenuItem(
+                  CheckedPopupMenuItem(
                     value: true,
-                    child: Text('最早添加'),
+                    checked: value,
+                    child: const Text('最早添加'),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    onTap: () => currCtr().toViewClear(context, 1),
+                    child: const Text('清空失效'),
+                  ),
+                  PopupMenuItem(
+                    onTap: () => currCtr().toViewClear(context, 2),
+                    child: const Text('清空看完'),
+                  ),
+                  PopupMenuItem(
+                    // toViewClear 内部自带确认弹窗，先确认再清空。
+                    onTap: () => currCtr().toViewClear(context),
+                    child: const Text('清空全部'),
                   ),
                 ],
               );
             },
           ),
-          PLPopupMenuButton(
-            tooltip: '清空',
-            borderRadius: const .all(.circular(20)),
-            child: Padding(
-              padding: const .symmetric(horizontal: 12, vertical: 6),
-              child: Text.rich(
-                style: TextStyle(fontSize: 14, height: 1, color: color),
-                strutStyle: const StrutStyle(
-                  leading: 0,
-                  height: 1,
-                  fontSize: 14,
-                ),
-                TextSpan(
-                  children: [
-                    const TextSpan(text: '清空'),
-                    WidgetSpan(
-                      alignment: .middle,
-                      child: Icon(
-                        size: 14,
-                        MdiIcons.unfoldMoreHorizontal,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                  style: TextStyle(color: color),
-                ),
-              ),
-            ),
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                onTap: () => currCtr().toViewClear(context, 1),
-                child: const Text('清空失效'),
-              ),
-              PopupMenuItem(
-                onTap: () => currCtr().toViewClear(context, 2),
-                child: const Text('清空看完'),
-              ),
-              PopupMenuItem(
-                onTap: () => currCtr().toViewClear(context),
-                child: const Text('清空全部'),
-              ),
-            ],
-          ),
-          const SizedBox(width: 8),
         ],
       ),
     );
