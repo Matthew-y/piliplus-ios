@@ -1,6 +1,6 @@
 import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_search_bar.dart';
-import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
+import 'package:PiliPlus/common/widgets/loading_widget/empty_state.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
@@ -109,7 +109,10 @@ class _SettingsSearchPageState
             ViewSliverSafeArea(
               sliver: Obx(
                 () => _list.isEmpty
-                    ? const HttpError()
+                    ? const EmptyState(
+                        message: '没有找到相关设置',
+                        icon: Icons.search_off_outlined,
+                      )
                     : SliverMasonryGrid(
                         gridDelegate: gridDelegate,
                         delegate: SliverChildBuilderDelegate(
