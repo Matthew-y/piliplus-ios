@@ -317,15 +317,25 @@ xcrun simctl launch booted com.example.piliplus
    ```
    直接 `flutter pub get` 可能升级 `material_ui`。
 3. `pubspec.lock` 实际新增依赖只有 `cupertino_icons` 与 `flutter_slidable`。
-4. iOS 模拟器点击脚本使用 Mac 屏幕坐标；当前窗口 `(749, 29)`、`366×792`，
-   设备截图 `1206×2622` 映射约为：
-   ```text
-   screenX = 771 + shotX * 0.267
-   screenY = 105 + shotY * 0.267
+4. **模拟器截图用 `--route` 深链，不要用 CGEvent 坐标点击。**
+   坐标点击（Mac 屏幕坐标 + `screenX = 771 + shotX * 0.267` 映射）曾让两个 agent
+   卡死 30 分钟以上，且窗口位置一变就失效。改用 Flutter 自带的初始路由：
+   ```bash
+   export PATH="/Users/matt/development/flutter/bin:$PATH"
+   DEV=D033A180-92AB-4B62-9DEF-CFD3269F28B7
+   BID=com.example.piliplus
+
+   xcrun simctl terminate "$DEV" "$BID" 2>/dev/null
+   flutter run -d "$DEV" --route=/history --no-resident
+   sleep 6
+   xcrun simctl io booted screenshot out.png
    ```
-   执行 CGEvent 前先激活 Simulator。
-5. 所有改动仍未提交；提交前建议按「适配层 / 主题层 / 首页 / 动态页 / 我的页 /
-   搜索页 / 消息页 / 弹层」拆分 review。
+   任意 GetX 路由都可直达（`/fav` `/later` `/follow` `/createFav` `/editProfile`
+   `/logs` `/settingsSearch` …），不需要点任何东西。
+   深色截图必须**同时**把 `Pref.themeMode` 改成「跟随系统」——
+   只切 `xcrun simctl ui booted appearance dark` 时 App 仍是浅色（本机 themeMode 存的是 0）。
+5. 改动已按「适配层 / 表单页 / 列表页 / 主题修复 / 文档」拆分提交；
+   后续继续按同一粒度拆分，不要合成一个 commit。
 
 ---
 
