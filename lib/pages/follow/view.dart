@@ -1,4 +1,6 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_segmented_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
@@ -162,55 +164,62 @@ class _FollowPageState extends State<FollowPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ViewSafeArea(
-            child: TabBar(
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              controller: _followController.tabController,
-              tabs: List.generate(_followController.tabs.length, (index) {
-                return Obx(() {
-                  final item = _followController.tabs[index];
-                  int? count = item.count;
-                  if (BiliUtils.isCustomFollowTag(item.tagid)) {
-                    return GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onLongPress: () {
-                        Feedback.forLongPress(context);
-                        _onHandleTag(index, item);
+            child: Adaptive.isIOS(context)
+                ? Obx(
+                    () => PLSegmentedTabBar(
+                      controller: _followController.tabController!,
+                      labels: _followController.tabs.map((item) {
+                        final count = item.count;
+                        return '${item.name}${count != null ? '($count)' : ''}';
+                      }).toList(),
+                      onTap: _onTabTap,
+                      onLongPress: (index) {
+                        final item = _followController.tabs[index];
+                        if (BiliUtils.isCustomFollowTag(item.tagid)) {
+                          Feedback.forLongPress(context);
+                          _onHandleTag(index, item);
+                        }
                       },
-                      onSecondaryTap: PlatformUtils.isMobile
-                          ? null
-                          : () => _onHandleTag(index, item),
-                      child: Tab(
-                        child: Row(
-                          children: [
-                            Text(
-                              '${item.name}${count != null ? '($count)' : ''} ',
+                    ),
+                  )
+                : TabBar(
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    controller: _followController.tabController,
+                    tabs: List.generate(_followController.tabs.length, (index) {
+                      return Obx(() {
+                        final item = _followController.tabs[index];
+                        int? count = item.count;
+                        if (BiliUtils.isCustomFollowTag(item.tagid)) {
+                          return GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onLongPress: () {
+                              Feedback.forLongPress(context);
+                              _onHandleTag(index, item);
+                            },
+                            onSecondaryTap: PlatformUtils.isMobile
+                                ? null
+                                : () => _onHandleTag(index, item),
+                            child: Tab(
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '${item.name}${count != null ? '($count)' : ''} ',
+                                  ),
+                                  const Icon(Icons.menu, size: 18),
+                                ],
+                              ),
                             ),
-                            const Icon(Icons.menu, size: 18),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                  return Tab(
-                    text: '${item.name}${count != null ? '($count)' : ''}',
-                  );
-                });
-              }),
-              onTap: (value) {
-                if (!_followController.tabController!.indexIsChanging) {
-                  final item = _followController.tabs[value];
-                  // if (_isCustomTag(item.tagid)) {
-                  //   _onHandleTag(value, item);
-                  // }
-                  try {
-                    Get.find<FollowChildController>(
-                      tag: '$_tag${item.tagid}',
-                    ).animateToTop();
-                  } catch (_) {}
-                }
-              },
-            ),
+                          );
+                        }
+                        return Tab(
+                          text:
+                              '${item.name}${count != null ? '($count)' : ''}',
+                        );
+                      });
+                    }),
+                    onTap: _onTabTap,
+                  ),
           ),
           Expanded(
             child: tabBarView(
@@ -222,6 +231,20 @@ class _FollowPageState extends State<FollowPage>
       ),
       Error() => _childPage(),
     };
+  }
+
+  void _onTabTap(int value) {
+    if (!_followController.tabController!.indexIsChanging) {
+      final item = _followController.tabs[value];
+      // if (_isCustomTag(item.tagid)) {
+      //   _onHandleTag(value, item);
+      // }
+      try {
+        Get.find<FollowChildController>(
+          tag: '$_tag${item.tagid}',
+        ).animateToTop();
+      } catch (_) {}
+    }
   }
 
   void _onHandleTag(int index, MemberTagItemModel item) {

@@ -1,5 +1,7 @@
+import 'package:PiliPlus/common/widgets/adaptive/adaptive.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_grouped_card.dart';
 import 'package:PiliPlus/common/widgets/adaptive/pl_popover.dart';
+import 'package:PiliPlus/common/widgets/adaptive/pl_segmented_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -59,6 +61,16 @@ class _HistoryPageState extends State<HistoryPage>
     super.dispose();
   }
 
+  void _onTabTap(int index, bool enableMultiSelect) {
+    if (!_historyController.tabController!.indexIsChanging) {
+      currCtr().scrollController.animToTop();
+    } else {
+      if (enableMultiSelect) {
+        currCtr(_historyController.tabController!.previousIndex).handleSelect();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -113,26 +125,24 @@ class _HistoryPageState extends State<HistoryPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ?_buildPauseTip,
-                    TabBar(
-                      controller: _historyController.tabController,
-                      onTap: (index) {
-                        if (!_historyController
-                            .tabController!
-                            .indexIsChanging) {
-                          currCtr().scrollController.animToTop();
-                        } else {
-                          if (enableMultiSelect) {
-                            currCtr(
-                              _historyController.tabController!.previousIndex,
-                            ).handleSelect();
-                          }
-                        }
-                      },
-                      tabs: [
-                        const Tab(text: '全部'),
-                        ...tabs.map((item) => Tab(text: item.name)),
-                      ],
-                    ),
+                    if (Adaptive.isIOS(context))
+                      PLSegmentedTabBar(
+                        controller: _historyController.tabController!,
+                        labels: [
+                          '全部',
+                          ...tabs.map((item) => item.name ?? ''),
+                        ],
+                        onTap: (index) => _onTabTap(index, enableMultiSelect),
+                      )
+                    else
+                      TabBar(
+                        controller: _historyController.tabController,
+                        onTap: (index) => _onTabTap(index, enableMultiSelect),
+                        tabs: [
+                          const Tab(text: '全部'),
+                          ...tabs.map((item) => Tab(text: item.name)),
+                        ],
+                      ),
                     Expanded(
                       child: TabBarView(
                         physics: enableMultiSelect
