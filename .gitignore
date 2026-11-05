@@ -150,3 +150,6 @@ pili_release.json
 dist
 
 test*
+# 本地 iOS 改造过程产物（截图与多 agent 协作工作区），不入库
+ios_style_audit/
+/shared/
