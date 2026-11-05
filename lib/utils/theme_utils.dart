@@ -85,11 +85,13 @@ abstract final class ThemeUtils {
       scaffoldBackgroundColor: groupedBg,
       appBarTheme: AppBarTheme(
         elevation: 0,
-        titleSpacing: 0,
-        // iOS 风格下不指定 centerTitle，让 AppBar 按平台规则自己判定
-        // （0~1 个 action 时居中，≥2 个时靠左）——与 iOS 一致。
-        // 非 iOS 风格保持原来的左对齐。
-        centerTitle: isIOS ? null : false,
+        // iOS 导航栏标题始终居中（真 iOS 行为），与 actions 数量无关。
+        // 不能留 centerTitle: null —— AppBar 的 platformCenter() 在 iOS 上
+        // 是「actions < 2 才居中」，≥2 个 action 的页面会退回左对齐，
+        // 叠加 titleSpacing: 0 后标题贴死屏幕左缘、首字被裁。
+        // titleSpacing 保留 16，居中标题在 actions 过宽时不会被挤到贴边。
+        titleSpacing: isIOS ? 16 : 0,
+        centerTitle: isIOS ? true : false,
         scrolledUnderElevation: 0,
         backgroundColor: groupedBg,
         // iOS 导航栏底部有一条 hairline 分割线。
