@@ -169,8 +169,7 @@ class _MediaPageState extends CommonPageState<MinePage>
                       mainAxisAlignment: .center,
                       children: [
                         Icon(
-                          // iOS 用 SF Symbols 风格的 CupertinoIcons 线性图标。
-                          isIOS ? e.cupertinoIcon : e.icon,
+                          e.icon,
                           color: primary,
                           size: 24,
                         ),
