@@ -256,7 +256,8 @@ abstract final class SettingBoxKey {
       liveCdnUrl = 'liveCdnUrl',
       saveReply = 'saveReply',
       appFont = 'appFont',
-      iosStyle = 'iosStyle';
+      iosStyle = 'iosStyle',
+      foldDepth = 'foldDepth';
 }
 
 abstract final class LocalCacheKey {
