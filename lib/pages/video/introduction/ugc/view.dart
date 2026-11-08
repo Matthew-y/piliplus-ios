@@ -668,7 +668,6 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
                             Duration(
                               seconds: DurationUtils.parseDuration(matchStr),
                             ),
-                            isSeek: false,
                           );
                         } catch (_) {}
                       },
