@@ -8,10 +8,28 @@
 #   bash tool/ios_style.sh off               # 始终关闭（Material 观感）
 #
 # 改完需要重启 App 才生效（theme 在启动时构建）。
+# 默认目标模拟器 iPhone 16e，可用 DEVICE_NAME / DEVICE 覆盖。
 set -euo pipefail
 
-DEVICE="${DEVICE:-D033A180-92AB-4B62-9DEF-CFD3269F28B7}"
+# 按设备名运行时解析 UDID，避免把某个模拟器的 UDID 写死在脚本里。
+# 同名设备可能有多个（不同 iOS runtime），优先取已开机的那个。
+# 仍可用 DEVICE=<UDID> 或 DEVICE_NAME="iPhone 16e" 覆盖。
+DEVICE_NAME="${DEVICE_NAME:-iPhone 16e}"
+if [ -z "${DEVICE:-}" ]; then
+  SIM_LIST=$(xcrun simctl list devices available | grep "${DEVICE_NAME} (" || true)
+  DEVICE=$(printf '%s\n' "$SIM_LIST" | grep '(Booted)' \
+    | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/' | head -n 1 || true)
+  if [ -z "$DEVICE" ]; then
+    DEVICE=$(printf '%s\n' "$SIM_LIST" \
+      | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/' | head -n 1 || true)
+  fi
+fi
 BUNDLE_ID="${BUNDLE_ID:-com.example.piliplus}"
+
+if [ -z "$DEVICE" ]; then
+  echo "错误：找不到模拟器 ${DEVICE_NAME}，请先在 Xcode → Devices and Simulators 添加" >&2
+  exit 1
+fi
 
 case "${1:-list}" in
   list)  KEY=follow ;;

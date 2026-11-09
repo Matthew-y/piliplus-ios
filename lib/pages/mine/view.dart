@@ -13,7 +13,6 @@ import 'package:PiliPlus/models/common/mine_tab_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/home/view.dart';
-import 'package:PiliPlus/pages/login/controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/mine/widgets/fav_item.dart';
@@ -210,7 +209,8 @@ class _MediaPageState extends CommonPageState<MinePage>
         spacing: 5,
         mainAxisSize: .min,
         children: [
-          if (!_mainController.hasHome) ...[
+          msgBadge(_mainController, size: 32),
+          if (!_mainController.hasHome)
             IconButton(
               iconSize: iconSize,
               padding: padding,
@@ -219,8 +219,6 @@ class _MediaPageState extends CommonPageState<MinePage>
               onPressed: () => Get.toNamed('/search'),
               icon: const Icon(Icons.search),
             ),
-            msgBadge(_mainController),
-          ],
           if (GStorage.reply != null)
             IconButton(
               iconSize: iconSize,
@@ -244,14 +242,6 @@ class _MediaPageState extends CommonPageState<MinePage>
                     : const Icon(MdiIcons.incognitoOff),
               );
             },
-          ),
-          IconButton(
-            iconSize: iconSize,
-            padding: padding,
-            style: style,
-            tooltip: '切换账号',
-            onPressed: () => LoginPageController.switchAccountDialog(context),
-            icon: const Icon(Icons.switch_account_outlined),
           ),
           Obx(
             () => IconButton(

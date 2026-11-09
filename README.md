@@ -219,6 +219,18 @@
 
 <br/>
 
+## 官方源码
+
+项目根目录下的 `Source Repo` 是一个软链接，指向本机克隆的 [PiliPlus 官方开源源码](https://github.com/bggRGjQaUbCoE/PiliPlus)：
+
+```bash
+ln -s "/Users/matt/Documents/Code/Github Repo/PiliPlus" "Source Repo"
+```
+
+该目录即上游官方实现，用于对照功能差异、同步卡片样式与修复。本仓库在官方源码基础上做了更激进的修改（含 iOS 风格改造），`Source Repo` 仅作本地参考，不参与本仓库构建，请勿直接改动其中的文件。
+
+<br/>
+
 ## 声明
 
 此项目（PiliPlus）是个人为了兴趣而开发，仅用于学习和测试，请于下载后24小时内删除。

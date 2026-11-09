@@ -61,13 +61,9 @@ abstract final class ThemeUtils {
     }
 
     final isIOS = IosStyle.isIOSStyleEnabled;
-    // iOS 语义色：需求要求页面底色用 systemGroupedBackground，
-    // 内容卡片用 systemBackground（纯白），两者不能被 Material 的粉色 surface 顶替。
+    // iOS 语义色：需求要求页面底色用 systemGroupedBackground。
     final groupedBg = isIOS
         ? IosColors.groupedBackground(isDark ? .dark : .light)
-        : colorScheme.surface;
-    final cardBg = isIOS
-        ? IosColors.secondaryGroupedBackground(isDark ? .dark : .light)
         : colorScheme.surface;
 
     final theme = ThemeData(
@@ -129,11 +125,9 @@ abstract final class ThemeUtils {
         surfaceTintColor: isDark ? colorScheme.surfaceContainerHighest : null,
       ),
       cardTheme: CardThemeData(
-        elevation: isIOS ? 0 : 1,
+        elevation: 1,
         margin: EdgeInsets.zero,
         shadowColor: Colors.transparent,
-        // iOS 的内容卡片是纯白（systemBackground），与浅灰页面底色形成层级。
-        color: cardBg,
         surfaceTintColor: isDark ? colorScheme.onSurfaceVariant : null,
       ),
       dividerTheme: DividerThemeData(

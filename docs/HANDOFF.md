@@ -124,26 +124,41 @@ Material 皮肤继续走原生 `PopupMenuButton`，外观与行为不变。
 
 ```bash
 cd /Users/matt/Documents/Code/PiliPlus
+export PATH="/Users/matt/development/flutter/bin:$PATH"
+# CocoaPods 需要 UTF-8，否则 pod install 报 ASCII-8BIT 编码错误
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 
 # 静态检查
 flutter analyze lib
 
-# 模拟器构建
-flutter build ios --simulator --debug
+# 目标模拟器（换设备只改这一行）；同名设备优先取已开机的
+DEVICE_NAME="iPhone 16e"
+SIM_LIST=$(xcrun simctl list devices available | grep "$DEVICE_NAME (")
+UDID=$(printf '%s\n' "$SIM_LIST" | grep '(Booted)' | head -n 1 \
+  | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
+[ -n "$UDID" ] || UDID=$(printf '%s\n' "$SIM_LIST" | head -n 1 \
+  | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
 
-# 安装 / 启动（iPhone 17 / iOS 26.3）
-xcrun simctl install booted build/ios/iphonesimulator/Runner.app
-xcrun simctl launch booted com.example.piliplus
+# 启动模拟器 + App（带热重载）
+xcrun simctl bootstatus "$UDID" -b
+flutter run -d "$UDID" --debug
+
+# 可选：手动构建 / 安装 / 启动
+# flutter build ios --simulator --debug
+# xcrun simctl install "$UDID" build/ios/iphonesimulator/Runner.app
+# xcrun simctl launch "$UDID" com.example.piliplus
 ```
 
 模拟器信息：
 
 | 项目 | 值 |
 |---|---|
-| 设备 | iPhone 17 / iOS 26.3 |
-| UDID | `D033A180-92AB-4B62-9DEF-CFD3269F28B7` |
+| 设备 | iPhone 16e |
+| UDID | 运行时由 `xcrun simctl list devices` 解析，不硬编码 |
 | Bundle ID | `com.example.piliplus` |
-| 窗口 | `(749, 29)`，`366×792` points |
+
+> 不要用 `booted`：同时开多个模拟器时会产生歧义，一律用 UDID。
 
 测试偏好：
 
@@ -322,18 +337,22 @@ xcrun simctl launch booted com.example.piliplus
    卡死 30 分钟以上，且窗口位置一变就失效。改用 Flutter 自带的初始路由：
    ```bash
    export PATH="/Users/matt/development/flutter/bin:$PATH"
-   DEV=D033A180-92AB-4B62-9DEF-CFD3269F28B7
+   export LANG=en_US.UTF-8
+   export LC_ALL=en_US.UTF-8
+   DEV=$(xcrun simctl list devices available | grep "iPhone 16e (" \
+     | grep '(Booted)' | head -n 1 \
+     | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
    BID=com.example.piliplus
 
    xcrun simctl terminate "$DEV" "$BID" 2>/dev/null
    flutter run -d "$DEV" --route=/history --no-resident
    sleep 6
-   xcrun simctl io booted screenshot out.png
+   xcrun simctl io "$DEV" screenshot out.png
    ```
    任意 GetX 路由都可直达（`/fav` `/later` `/follow` `/createFav` `/editProfile`
    `/logs` `/settingsSearch` …），不需要点任何东西。
    深色截图必须**同时**把 `Pref.themeMode` 改成「跟随系统」——
-   只切 `xcrun simctl ui booted appearance dark` 时 App 仍是浅色（本机 themeMode 存的是 0）。
+   只切 `xcrun simctl ui "$DEV" appearance dark` 时 App 仍是浅色（本机 themeMode 存的是 0）。
 5. 改动已按「适配层 / 表单页 / 列表页 / 主题修复 / 文档」拆分提交；
    后续继续按同一粒度拆分，不要合成一个 commit。
 

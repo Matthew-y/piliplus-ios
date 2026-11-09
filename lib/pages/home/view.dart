@@ -180,7 +180,11 @@ class _HomePageState extends CommonPageState<HomePage>
       children: [
         searchBar(),
         const SizedBox(width: 4),
-        msgBadge(_mainController),
+        // 保留消息入口元素，仅隐藏首页顶栏入口；恢复时把 offstage 改为 false
+        Offstage(
+          offstage: true,
+          child: msgBadge(_mainController),
+        ),
         const SizedBox(width: 8),
         userAvatar(colorScheme: _colorScheme, mainController: _mainController),
       ],
@@ -240,7 +244,11 @@ class _HomePageState extends CommonPageState<HomePage>
           children: [
             Expanded(child: _iosSearchBar()),
             const SizedBox(width: 8),
-            msgBadge(_mainController, size: 28),
+            // 保留消息入口元素，仅隐藏首页顶栏入口；恢复时把 offstage 改为 false
+            Offstage(
+              offstage: true,
+              child: msgBadge(_mainController, size: 28),
+            ),
           ],
         ),
       ),
