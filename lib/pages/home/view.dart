@@ -143,30 +143,23 @@ class _HomePageState extends CommonPageState<HomePage>
   /// 顶栏底色：浅色纯白，深色跟随 canvas。
   Color get _headerBackground => IosColors.headerBackground(context);
 
-  /// iOS 风格顶部 Tab：原生分段控件（浅灰轨道 + 白色滑块，无下划线）。
+  /// iOS 风格顶部 Tab：浅灰轨道 + 白色滑块，无下划线。
   ///
-  /// 用 [AnimatedBuilder] 跟随 [TabController]，index 变化时重建并让滑块
-  /// 平滑过渡。
+  /// 由 [PLTabSegmentedTabs] 内的 `TabBar` 与 `TabBarView` 共用同一个
+  /// TabController，滑块按连续位置跟随内容区滑动（与官方实现一致）。
   Widget _iosSegmentedTabs() {
     final tabs = _homeController.tabs;
-    return AnimatedBuilder(
-      animation: _homeController.tabController,
-      builder: (context, _) {
-        return PLSegmentedTabs<HomeTabType>(
-          values: tabs,
-          labelOf: (e) => e.label,
-          groupValue: tabs[_homeController.tabController.index],
-          onValueChanged: (value) {
-            final index = tabs.indexOf(value);
-            if (index < 0) return;
-            feedBack();
-            // CupertinoSlidingSegmentedControl 不会自动驱动 TabController，
-            // 需手动 animateTo；index 同步更新后 AnimatedBuilder 触发滑块动画。
-            _homeController.tabController.animateTo(index);
-            // animateTo 已同步把 index 切到新页，这里滚到顶部。
-            _homeController.animateToTop();
-          },
-        );
+    return PLTabSegmentedTabs<HomeTabType>(
+      controller: _homeController.tabController,
+      values: tabs,
+      labelOf: (e) => e.label,
+      onTap: (_) {
+        feedBack();
+        // 官方语义：TabBar 已自行 animateTo，切页动画期间不滚列表；
+        // 只有点击当前 tab（indexIsChanging 为 false）才回到顶部。
+        if (!_homeController.tabController.indexIsChanging) {
+          _homeController.animateToTop();
+        }
       },
     );
   }

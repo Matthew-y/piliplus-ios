@@ -81,23 +81,19 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
     );
   }
 
+  /// `TabBar` 与 `TabBarView` 共用 TabController，滑块连续跟随内容区滑动。
   Widget _iosSegmentedTabs() {
     const tabs = DynamicsTabType.values;
-    return AnimatedBuilder(
-      animation: _dynamicsController.tabController,
-      builder: (context, _) {
-        return PLSegmentedTabs<DynamicsTabType>(
-          values: tabs,
-          labelOf: (e) => e.label,
-          groupValue: tabs[_dynamicsController.tabController.index],
-          onValueChanged: (value) {
-            final index = tabs.indexOf(value);
-            if (index < 0) return;
-            feedBack();
-            _dynamicsController.tabController.animateTo(index);
-            _dynamicsController.animateToTop();
-          },
-        );
+    return PLTabSegmentedTabs<DynamicsTabType>(
+      controller: _dynamicsController.tabController,
+      values: tabs,
+      labelOf: (e) => e.label,
+      onTap: (_) {
+        feedBack();
+        // 官方语义：切页动画期间不抢着滚列表，仅点击当前 tab 时回顶部。
+        if (!_dynamicsController.tabController.indexIsChanging) {
+          _dynamicsController.animateToTop();
+        }
       },
     );
   }
