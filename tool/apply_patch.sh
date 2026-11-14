@@ -15,9 +15,24 @@ set -euo pipefail
 PLATFORM="${1:-ios}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FLUTTER_ROOT="${FLUTTER_ROOT:-/Users/matt/development/flutter}"
-PUB_CACHE_DIR="$HOME/.pub-cache/hosted/pub.dev"
+PUB_CACHE_HOSTED="$HOME/.pub-cache/hosted"
 
 cd "$ROOT"
+
+# 按 pubspec.lock 里的版本在任意 host 目录（pub.dev / pub.flutter-io.cn）定位包路径
+resolve_pkg_dir() {
+  local name="$1" ver
+  ver=$(awk -v n="$name" '$0 == "  " n ":" { f = 1 } f && /version:/ { gsub(/[" ]/, "", $2); print $2; exit }' "$ROOT/pubspec.lock")
+  if [ -n "$ver" ] && [ -d "$PUB_CACHE_HOSTED/pub.dev/$name-$ver" ]; then
+    echo "$PUB_CACHE_HOSTED/pub.dev/$name-$ver"
+    return 0
+  fi
+  if [ -n "$ver" ] && [ -d "$PUB_CACHE_HOSTED/pub.flutter-io.cn/$name-$ver" ]; then
+    echo "$PUB_CACHE_HOSTED/pub.flutter-io.cn/$name-$ver"
+    return 0
+  fi
+  ls -d "$PUB_CACHE_HOSTED"/*/"$name"-* 2>/dev/null | tail -1
+}
 
 # ---- Flutter SDK 自身的补丁 ----
 SDK_PATCHES=(
@@ -43,6 +58,7 @@ SDK_PATCHES=(
   "lib/scripts/sliver.patch"
   "lib/scripts/refresh_indicator.patch"
   "lib/scripts/double_tap_gesture.patch"
+  "lib/scripts/media_query.patch"
 )
 
 case "$PLATFORM" in
@@ -76,7 +92,7 @@ cd "$ROOT"
 export PATH="$FLUTTER_ROOT/bin:$PATH"
 flutter pub get >/dev/null
 
-MATERIAL_UI_DIR=$(ls -d "$PUB_CACHE_DIR"/material_ui-* 2>/dev/null | tail -1)
+MATERIAL_UI_DIR=$(resolve_pkg_dir material_ui)
 if [ -z "$MATERIAL_UI_DIR" ]; then
   echo "错误：pub cache 里找不到 material_ui" >&2
   exit 1
@@ -109,7 +125,7 @@ done
 
 # ---- cupertino_ui ----
 echo "==> 给 cupertino_ui 打补丁"
-CUPERTINO_UI_DIR=$(ls -d "$PUB_CACHE_DIR"/cupertino_ui-* 2>/dev/null | tail -1)
+CUPERTINO_UI_DIR=$(resolve_pkg_dir cupertino_ui)
 if [ -z "$CUPERTINO_UI_DIR" ]; then
   echo "错误：pub cache 里找不到 cupertino_ui" >&2
   exit 1

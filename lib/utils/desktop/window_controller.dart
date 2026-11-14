@@ -91,6 +91,10 @@ class WindowController {
         break;
       case WindowOcclusionChangedEvent():
         break;
+      case WindowDockedEvent():
+        break;
+      case WindowUndockedEvent():
+        break;
     }
   }
 
